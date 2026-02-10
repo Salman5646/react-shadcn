@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -5,6 +6,21 @@ import { Footer } from "../comps/Footer"
 import { Navbar } from "../comps/Navbar"
 
 export function About() {
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("theme") === "dark" || false
+  );
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
   return (
     <>
       <Navbar />

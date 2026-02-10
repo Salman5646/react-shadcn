@@ -15,8 +15,10 @@ export function ProductSkeleton() {
                 {/* Description Lines */}
                 <div className="space-y-2">
                     <Skeleton className="h-3 w-full bg-zinc-800" />
+                    <Skeleton className="h-3 w-full bg-zinc-800" />
                     <Skeleton className="h-3 w-5/6 bg-zinc-800" />
                 </div>
+                <Skeleton className="h-3 w-1/2 bg-zinc-800" />
             </CardHeader>
 
             <CardFooter className="p-4 pt-0">

@@ -1,4 +1,4 @@
-"use client"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,20 @@ import { Footer } from "../comps/Footer"
 import { Navbar } from "../comps/Navbar"
 
 export function Contact() {
+    const [darkMode, setDarkMode] = useState(
+        localStorage.getItem("theme") === "dark" || false
+    );
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+        }
+    }, [darkMode]);
+
+    const toggleDarkMode = () => setDarkMode(!darkMode);
     const form = useForm({
         defaultValues: {
             username: "",

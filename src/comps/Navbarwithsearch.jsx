@@ -32,14 +32,21 @@ import {
 } from "@/components/ui/sheet" // Ensure you have this component installed
 import { Button } from "@/components/ui/button"
 
-export function Navbar() {
+export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggleDarkMode, darkMode }) {
     return (
+
         <div className="bg-gray-900 dark:bg-black sticky top-0 z-50 flex w-full items-center justify-between py-4 px-4 md:px-8">
             <Avatar className="border-none">
                 <AvatarImage src={logo} alt="Logo" />
                 <AvatarFallback>Logo</AvatarFallback>
             </Avatar>
-
+            <Searchbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} resultCount={resultCount} />
+            <button
+                onClick={toggleDarkMode}
+                className="p bg-transparent dark:bg-black md:hidden shadow-lg z-50"
+            >
+                {darkMode ? "🌙" : "☀️"}
+            </button>
             {/* DESKTOP MENU (Hidden on mobile) */}
             <NavigationMenu className="hidden md:block">
                 <NavigationMenuList>
@@ -61,6 +68,16 @@ export function Navbar() {
                     <NavigationMenuItem>
                         <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                             <Link to="/login">Sign In</Link>
+                        </NavigationMenuLink>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                            <button
+                                onClick={toggleDarkMode}
+                                className="p-3 bg-white dark:bg-black shadow-lg z-50"
+                            >
+                                {darkMode ? "🌙" : "☀️"}
+                            </button>
                         </NavigationMenuLink>
                     </NavigationMenuItem>
                 </NavigationMenuList>

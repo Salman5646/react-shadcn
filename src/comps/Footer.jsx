@@ -10,7 +10,7 @@ export function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div className="space-y-4">
                         <div className="flex items-center space-x-2">
-                            <span className="font-bold text-2xl">Acme Inc</span>
+                            <span className="font-bold text-2xl">Shopr.</span>
                         </div>
                         <p className="text-muted-foreground text-sm">
                             Building better digital experiences for everyone.
@@ -75,7 +75,7 @@ export function Footer() {
                 </div>
 
                 <div className="mt-10 border-t pt-8 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} Acme Inc. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Shopr.. All rights reserved.</p>
                 </div>
             </div>
         </footer>
