@@ -10,6 +10,7 @@ import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
 import { Login } from "./comps/Login";
 import { Toaster } from "sonner";
+import Cart from "./comps/Cart";
 
 export function App() {
   return (
@@ -19,6 +20,7 @@ export function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/cart" element={<Cart />} />
       </Routes>
       <Toaster />
     </>

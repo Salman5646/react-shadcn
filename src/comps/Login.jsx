@@ -9,8 +9,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-import { Home } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 
 export function Login() {
@@ -18,7 +17,8 @@ export function Login() {
         /* --- Wrapper Container --- */
         <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-950">
             <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-white hover:text-gray-300 transition-colors">
-                <Home className="h-6 w-6" />
+                <ChevronLeft className="h-6 w-6" />
+
                 <span className="sr-only">Back to Home</span>
             </Link>
             <Card className="w-full max-w-sm">

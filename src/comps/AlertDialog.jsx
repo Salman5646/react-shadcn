@@ -12,9 +12,14 @@ import {
 import { toast } from "sonner"
 
 // Add 'title' to your props destructuring
-export function AlertDialog({ trigger, title }) {
+export function AlertDialog({ trigger, title, item }) {
 
     const handleAddToCart = () => {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart.push(item);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        window.dispatchEvent(new Event("storage"));
+
         // Get current time in a readable format (e.g., 10:30 PM)
         const currentTime = new Date().toLocaleTimeString([], {
             hour: '2-digit',
