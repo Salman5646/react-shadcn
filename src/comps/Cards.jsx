@@ -13,8 +13,9 @@ import { ProductDetails } from "./ProductDetails"
 import { cn } from "@/lib/utils"
 
 // Change this line to explicitly pull out your custom props
-export function Cards({ behaviour, item, onRemove, variant = "default" }) {
+export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease }) {
     const isCart = behaviour === "cart";
+    const showQuantity = behaviour === "cart" || behaviour === "quantity";
 
     const Content = (
         <div className={cn(
@@ -55,23 +56,44 @@ export function Cards({ behaviour, item, onRemove, variant = "default" }) {
                 {Content}
             </ProductDetails>
 
-            <CardFooter className="p-1.5 md:p-4 md:pt-0 pt-0 mt-auto">
-                {isCart ? (
-                    <Button
-                        variant="destructive"
-                        onClick={(e) => {
-                            e.stopPropagation(); // Prevents the modal from opening when clicking remove
-                            onRemove();
-                        }}
-                        className="w-full"
-                    >
-                        Remove Item
-                    </Button>
+
+            <CardFooter className="p-3 mt-auto flex flex-col gap-2">
+                {showQuantity ? (
+                    <div className="flex flex-col w-full gap-2">
+                        {/* Integrated Quantity Pill */}
+                        <div className="flex items-center justify-between w-full h-10 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 px-1">
+                            <Button
+                                variant="ghost" size="icon" className="h-8 w-8"
+                                onClick={(e) => { e.stopPropagation(); onDecrease(); }}
+                            > - </Button>
+
+                            <span className="text-sm font-mono font-bold">
+                                {item.quantity || 1}
+                            </span>
+
+                            <Button
+                                variant="ghost" size="icon" className="h-8 w-8"
+                                onClick={(e) => { e.stopPropagation(); onIncrease(); }}
+                            > + </Button>
+                        </div>
+
+                        {/* Show Remove only on Cart page */}
+                        {behaviour === "cart" && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-white bg-red-500 hover:text-red-500 text-xs"
+                                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                            >
+                                Remove from Cart
+                            </Button>
+                        )}
+                    </div>
                 ) : (
                     <AlertDialog
                         title={item.product_name}
                         item={item}
-                        trigger={<Button className="w-full">Add to Cart</Button>}
+                        trigger={<Button className="w-full bg-black text-white dark:bg-white dark:text-black font-bold">Add to Cart</Button>}
                     />
                 )}
             </CardFooter>

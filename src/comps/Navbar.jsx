@@ -36,7 +36,7 @@ export function Navbar() {
     return (
         <div className="bg-gray-900 dark:bg-black sticky top-0 z-50 flex w-full items-center justify-between py-4 px-4 md:px-8">
             <Avatar className="border-none">
-                <AvatarImage src={logo} alt="Logo" />
+                <Link to="/"><AvatarImage src={logo} alt="Logo" /></Link>
                 <AvatarFallback>Logo</AvatarFallback>
             </Avatar>
 

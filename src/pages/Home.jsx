@@ -18,6 +18,23 @@ export function Home() {
     const [darkMode, setDarkMode] = useState(
         localStorage.getItem("theme") === "dark" || false
     );
+    const addToCart = (product) => {
+        const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+
+        // Check if item already exists based on name (or id if you have one)
+        const existingItemIndex = savedCart.findIndex(item => item.product_name === product.product_name);
+
+        if (existingItemIndex > -1) {
+            // If it exists, increment quantity
+            savedCart[existingItemIndex].quantity = (savedCart[existingItemIndex].quantity || 1) + 1;
+        } else {
+            // If new, add with quantity 1
+            savedCart.push({ ...product, quantity: 1 });
+        }
+
+        localStorage.setItem("cart", JSON.stringify(savedCart));
+        window.dispatchEvent(new Event("cartUpdate"));
+    };
     useEffect(() => {
         if (darkMode) {
             document.documentElement.classList.add("dark");
@@ -69,11 +86,30 @@ export function Home() {
     const filteredOrders = orders.filter(order =>
         order.product_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    const handleUpdateQuantity = (product, delta) => {
+        const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+        const existingIndex = savedCart.findIndex(item => item.product_name === product.product_name);
 
+        if (existingIndex > -1) {
+            const newQty = (savedCart[existingIndex].quantity || 1) + delta;
+            if (newQty < 1) {
+                savedCart.splice(existingIndex, 1);
+            } else {
+                savedCart[existingIndex].quantity = newQty;
+            }
+        } else if (delta > 0) {
+            // New item being added for the first time
+            savedCart.push({ ...product, quantity: 1 });
+        }
+
+        localStorage.setItem("cart", JSON.stringify(savedCart));
+        setCartItems(savedCart); // Update local state immediately
+        window.dispatchEvent(new Event("cartUpdate"));
+    };
     return (
         <SidebarProvider defaultOpen={false}>
             {/* 2. Add the actual Sidebar component here so it has something to show */}
-            <Sidebar collapsible="icon">
+            <Sidebar collapsible="offcanvas">
                 <SidebarHeader className="border-b border-sidebar-border pb-4">
                     <div className="flex items-center gap-3 px-2 pt-2">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-black font-bold">
@@ -94,7 +130,7 @@ export function Home() {
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton isActive>
-                                        <span className="flex items-center gap-2">🏠 Home</span>
+                                        <span className="flex items-center gap-2"><Link to="/">🏠 Home</Link></span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
@@ -181,13 +217,20 @@ export function Home() {
                                 <ProductSkeleton key={index} />
                             ))
                         ) : filteredOrders.length > 0 ? (
-                            filteredOrders.map((product, index) => (
-                                <Cards
-                                    key={index}
-                                    item={product}
-                                    variant="default"
-                                />
-                            ))
+                            filteredOrders.map((product, index) => {
+                                const cartItem = cartItems.find(item => item.product_name === product.product_name);
+
+                                return (
+                                    <Cards
+                                        key={index}
+                                        item={cartItem || product}
+                                        behaviour={cartItem ? "quantity" : "home"}
+                                        onIncrease={() => handleUpdateQuantity(product, 1)}
+                                        onDecrease={() => handleUpdateQuantity(product, -1)}
+                                        variant="default"
+                                    />
+                                );
+                            })
                         ) : (
                             <div className="col-span-full text-center py-10">
                                 <p className="text-gray-500 dark:text-gray-400 text-lg">

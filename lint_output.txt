@@ -1,0 +1,188 @@
+
+> test@0.0.0 lint
+> eslint .
+
+
+C:\Users\Administrator\Desktop\test\src\App.jsx
+  3:10  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u   no-unused-vars
+  3:20  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Administrator\Desktop\test\src\components\ui\badge.jsx
+  34:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Administrator\Desktop\test\src\components\ui\button.jsx
+  48:18  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Administrator\Desktop\test\src\components\ui\form.jsx
+  130:3  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Administrator\Desktop\test\src\components\ui\navigation-menu.jsx
+  95:3  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Administrator\Desktop\test\src\components\ui\sidebar.jsx
+  557:26  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  555 |   // Random width between 50 to 90%.
+  556 |   const width = React.useMemo(() => {
+> 557 |     return `${Math.floor(Math.random() * 40) + 50}%`;
+      |                          ^^^^^^^^^^^^^ Cannot call impure function
+  558 |   }, [])
+  559 |
+  560 |   return (  react-hooks/purity
+  646:3   error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-refresh/only-export-components
+
+C:\Users\Administrator\Desktop\test\src\comps\Cart.jsx
+  17:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  15 |     useEffect(() => {
+  16 |         const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+> 17 |         setCartItems(savedCart);
+     |         ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  18 |     }, []);
+  19 |     const removeItem = (indexToRemove) => {
+  20 |         // 1. Get current items  react-hooks/set-state-in-effect
+
+C:\Users\Administrator\Desktop\test\src\comps\Navbar.jsx
+  21:10  error  'cn' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Administrator\Desktop\test\src\comps\Navbarwithsearch.jsx
+  21:10  error  'cn' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Administrator\Desktop\test\src\comps\ProductDetails.jsx
+  36:11  error  'handleAdd' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Administrator\Desktop\test\src\comps\Sidebar.jsx
+  411:13  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  409 |         defaultTagName: "div",
+  410 |         props: mergeProps(
+> 411 |             {
+      |             ^
+> 412 |                 className: cn(
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 413 |                     "text-sidebar-foreground/70 ring-sidebar-ring h-8 rounded-md px-2 text-xs font-medium transition-[margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 focus-visible:ring-2 [&>svg]:size-4 flex shrink-0 items-center outline-hidden [&>svg]:shrink-0",
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 414 |                     className
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 415 |                 ),
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 416 |                 ref,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 417 |             },
+      | ^^^^^^^^^^^^^^ Passing a ref to a function may read its value during render
+  418 |             props
+  419 |         ),
+  420 |         render,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/refs
+  433:13  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  431 |         defaultTagName: "button",
+  432 |         props: mergeProps(
+> 433 |             {
+      |             ^
+> 434 |                 className: cn(
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 435 |                     "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 w-5 rounded-md p-0 focus-visible:ring-2 [&>svg]:size-4 flex aspect-square items-center justify-center outline-hidden transition-transform [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden",
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 436 |                     className
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 437 |                 ),
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 438 |                 ref,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 439 |             },
+      | ^^^^^^^^^^^^^^ Passing a ref to a function may read its value during render
+  440 |             props
+  441 |         ),
+  442 |         render,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/refs
+  524:13  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  522 |         defaultTagName: "button",
+  523 |         props: mergeProps(
+> 524 |             {
+      |             ^
+> 525 |                 className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 526 |                 ref,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 527 |             },
+      | ^^^^^^^^^^^^^^ Passing a ref to a function may read its value during render
+  528 |             props
+  529 |         ),
+  530 |         render: !tooltip ? render : TooltipTrigger,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/refs
+  572:13  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  570 |         defaultTagName: "button",
+  571 |         props: mergeProps(
+> 572 |             {
+      |             ^
+> 573 |                 className: cn(
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 574 |                     "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 aspect-square w-5 rounded-md p-0 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1 focus-visible:ring-2 [&>svg]:size-4 flex items-center justify-center outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 md:after:hidden [&>svg]:shrink-0",
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 575 |                     showOnHover &&
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 576 |                     "peer-data-active/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 aria-expanded:opacity-100 md:opacity-0",
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 577 |                     className
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 578 |                 ),
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 579 |                 ref,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 580 |             },
+      | ^^^^^^^^^^^^^^ Passing a ref to a function may read its value during render
+  581 |             props
+  582 |         ),
+  583 |         render,  react-hooks/refs
+  681:13  error  Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  679 |         defaultTagName: "a",
+  680 |         props: mergeProps(
+> 681 |             {
+      |             ^
+> 682 |                 className: cn(
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 683 |                     "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground h-7 gap-2 rounded-md px-2 focus-visible:ring-2 data-[size=md]:text-sm data-[size=sm]:text-xs [&>svg]:size-4 flex min-w-0 -translate-x-px items-center overflow-hidden outline-hidden group-data-[collapsible=icon]:hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:shrink-0",
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 684 |                     className
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 685 |                 ),
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 686 |                 ref,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 687 |             },
+      | ^^^^^^^^^^^^^^ Passing a ref to a function may read its value during render
+  688 |             props
+  689 |         ),
+  690 |         render,                                                                                                                                                                                                                                  react-hooks/refs
+  725:5   error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-refresh/only-export-components
+
+C:\Users\Administrator\Desktop\test\src\pages\About.jsx
+  22:9  error  'toggleDarkMode' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Administrator\Desktop\test\src\pages\Contact.jsx
+  32:11  error  'toggleDarkMode' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\Administrator\Desktop\test\tailwind.config.js
+  69:13  error  'require' is not defined  no-undef
+
+✖ 21 problems (21 errors, 0 warnings)
+
