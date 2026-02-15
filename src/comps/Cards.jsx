@@ -29,7 +29,7 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                 className="relative z-20 aspect-video w-full object-cover brightness-60 dark:brightness-40"
             />
 
-            <CardHeader className="flex-1 p-1.5 md:p-6 space-y-1">
+            <CardHeader className="p-1.5 md:p-6 space-y-1">
                 <div className="mb-2">
                     <Badge className="text-[10px] md:text-xs px-1 py-0.5" variant={variant}>
                         {item.category}
@@ -49,7 +49,7 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
     );
 
     return (
-        <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col h-full overflow-hidden">
+        <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col overflow-hidden">
 
             {/* Now we always wrap with ProductDetails so it's clickable everywhere */}
             <ProductDetails item={item}>
@@ -57,13 +57,13 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
             </ProductDetails>
 
 
-            <CardFooter className="p-3 mt-auto flex flex-col gap-2">
+            <CardFooter className="p-1.5 md:p-3 mt-auto flex flex-row items-center gap-1.5 md:gap-2">
                 {showQuantity ? (
-                    <div className="flex flex-col w-full gap-2">
+                    <div className="flex flex-row w-full items-center gap-1.5 md:gap-2">
                         {/* Integrated Quantity Pill */}
-                        <div className="flex items-center justify-between w-full h-10 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 px-1">
+                        <div className="flex items-center justify-between w-full md:flex-1 h-8 md:h-10 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 px-1">
                             <Button
-                                variant="ghost" size="icon" className="h-8 w-8"
+                                variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8"
                                 onClick={(e) => { e.stopPropagation(); onDecrease(); }}
                             > - </Button>
 
@@ -72,7 +72,7 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                             </span>
 
                             <Button
-                                variant="ghost" size="icon" className="h-8 w-8"
+                                variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8"
                                 onClick={(e) => { e.stopPropagation(); onIncrease(); }}
                             > + </Button>
                         </div>
@@ -82,10 +82,10 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-white bg-red-500 hover:text-red-500 text-xs"
+                                className="text-white bg-red-500 hover:text-red-500 h-8 md:h-10 text-xs shrink-0 px-2"
                                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
                             >
-                                Remove from Cart
+                                Remove
                             </Button>
                         )}
                     </div>

@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
 import { ChevronLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-export function Login() {
+export function Signup() {
     return (
         /* --- Wrapper Container --- */
         <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-950">
@@ -23,14 +24,13 @@ export function Login() {
             </Link>
             <Card className="w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle className="text-center text-2xl m-2">Login to your account</CardTitle>
+                    <CardTitle className="text-center text-2xl m-2">Create your new account</CardTitle>
 
                     <div className="flex justify-center">
-                        <Tabs defaultValue="login" className="w-full">
+                        <Tabs defaultValue="signup" className="w-full">
                             <TabsList className="w-full">
-                                <TabsTrigger value="login" className="flex-1">Log In</TabsTrigger>
-                                <TabsTrigger value="signup" className="flex-1" asChild>
-                                    <Link to="/signup">Sign Up</Link>
+                                <TabsTrigger value="login" className="flex-1"><Link to="/login">Log In</Link></TabsTrigger>
+                                <TabsTrigger value="signup" className="flex-1" asChild><Link to="/signup">Sign Up</Link>
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -65,10 +65,10 @@ export function Login() {
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
                     <Button type="submit" className="w-full">
-                        Login
+                        Sign up
                     </Button>
                     <Button variant="outline" className="w-full">
-                        Login with Google
+                        Sign up with Google
                     </Button>
                 </CardFooter>
             </Card>

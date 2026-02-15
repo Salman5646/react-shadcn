@@ -9,9 +9,9 @@ import { Home } from "./pages/Home";
 import { About } from "./pages/About";
 import { Contact } from "./pages/Contact";
 import { Login } from "./comps/Login";
-import { Toaster } from "sonner";
+import { Toaster } from "sonner"; 
 import Cart from "./comps/Cart";
-
+import { Signup } from "./comps/Signup";
 export function App() {
   return (
     <>
@@ -21,6 +21,7 @@ export function App() {
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/signup" element={<Signup />} />
       </Routes>
       <Toaster />
     </>

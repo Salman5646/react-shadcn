@@ -75,7 +75,7 @@ export function Footer() {
                 </div>
 
                 <div className="mt-10 border-t pt-8 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} Shopr.. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Shopr. All rights reserved.</p>
                 </div>
             </div>
         </footer>
