@@ -1,18 +1,53 @@
-import { Link } from "react-router-dom";
-import { CircleUser } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { CircleUser, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useSidebar, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator } from "@/components/ui/sidebar";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function AppSidebar() {
+    const [user, setUser] = useState(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const savedUser = JSON.parse(localStorage.getItem("user"));
+        if (savedUser) setUser(savedUser);
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem("user");
+        setUser(null);
+        navigate("/");
+    };
+
     return (
         <Sidebar collapsible="offcanvas">
             <SidebarHeader className="border-b border-sidebar-border pb-4">
                 <div className="flex items-center gap-3 px-2 pt-2">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-black font-bold">
-                        S
+                        {user ? user.name.charAt(0).toUpperCase() : "?"}
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-semibold text-sm leading-none">Salman Shaikh</span>
-                        <span className="text-xs text-muted-foreground">Premium Member</span>
+                        {user ? (
+                            <>
+                                <span className="font-semibold text-sm leading-none">{user.name}</span>
+                                <span className="text-xs text-muted-foreground">{user.email}</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="font-semibold text-sm leading-none">Guest</span>
+                                <Link to="/login" className="text-xs text-blue-500 hover:underline">Sign in</Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </SidebarHeader>
@@ -67,18 +102,56 @@ export function AppSidebar() {
 
                 <SidebarSeparator />
 
-                {/* Settings Group */}
+                {/* Account Group */}
                 <SidebarGroup>
-                    <SidebarGroupLabel>Settings</SidebarGroupLabel>
+                    <SidebarGroupLabel>Account</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
+                            {user && (
+                                <>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>
+                                            <span className="text-xs text-muted-foreground">📍 {user.city}, {user.country}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>
+                                            <span className="text-xs text-muted-foreground">📞 {user.phone}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </>
+                            )}
                             <SidebarMenuItem>
                                 <SidebarMenuButton>⚙️ Account Settings</SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton className="text-red-500 hover:text-red-600">
-                                    🚪 Logout
-                                </SidebarMenuButton>
+                                {user ? (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <SidebarMenuButton className="text-red-500 hover:text-red-600">
+                                                <LogOut className="h-4 w-4 mr-1" /> Logout
+                                            </SidebarMenuButton>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    You will need to sign in again to access your account.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                ) : (
+                                    <SidebarMenuButton asChild>
+                                        <Link to="/login" className="text-blue-500 hover:text-blue-600">
+                                            🔑 Sign In
+                                        </Link>
+                                    </SidebarMenuButton>
+                                )}
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>

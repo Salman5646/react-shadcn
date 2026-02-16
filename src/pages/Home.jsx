@@ -62,20 +62,12 @@ export function Home() {
     const [searchTerm, setSearchTerm] = useState(initialSearch || "");
 
     useEffect(() => {
-        setIsLoading(true); // Ensure loading starts as true
-        fetch("https://fakestoreapi.com/products")
+        setIsLoading(true);
+        fetch("/api/products")
             .then((res) => res.json())
             .then((data) => {
-                const formattedData = data.map(item => ({
-                    product_name: item.title,
-                    product_description: item.description,
-                    product_image: item.image,
-                    category: item.category,
-                    price: item.price,
-                    rating: item.rating,
-                }));
-                setOrders(formattedData);
-                setIsLoading(false); // 2. Turn off loading when data arrives
+                setOrders(data);
+                setIsLoading(false);
             })
             .catch((err) => {
                 console.error("API Error:", err);
