@@ -64,6 +64,17 @@ app.delete("/api/products/:id", async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
         if (!product) return res.status(404).json({ message: "Product not found" });
+        res.json({ message: "Product deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE a product
+app.delete("/api/products/:id", async (req, res) => {
+    try {
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) return res.status(404).json({ message: "Product not found" });
         res.json({ message: "Product deleted" });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -99,6 +110,7 @@ app.post("/api/register", async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role,
                 phone: user.phone,
                 address: user.address,
                 city: user.city,
@@ -133,12 +145,179 @@ app.post("/api/login", async (req, res) => {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                role: user.role,
                 phone: user.phone,
                 address: user.address,
                 city: user.city,
                 country: user.country,
             },
         });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// POST Google OAuth login
+app.post("/api/google-auth", async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ message: "Token is required" });
+        }
+
+        // Verify the Google token
+        const { OAuth2Client } = await import("google-auth-library");
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, name, picture } = payload;
+
+        // Find existing user or create a new one
+        let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+        if (user) {
+            // If user registered with email/password (has password, no googleId), reject Google login
+            if (user.password && !user.googleId) {
+                return res.status(400).json({
+                    message: "This email is already registered. Please login with your email and password."
+                });
+            }
+        } else {
+            // Create new user from Google profile
+            user = await User.create({
+                name,
+                email,
+                googleId,
+            });
+        }
+
+        res.json({
+            message: "Login successful",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                address: user.address,
+                city: user.city,
+                country: user.country,
+            },
+        });
+    } catch (err) {
+        console.error("Google auth error:", err.message);
+        res.status(401).json({ message: "Invalid Google token" });
+    }
+});
+
+// PUT update user profile (for Google users completing their profile)
+app.put("/api/update-profile", async (req, res) => {
+    try {
+        const { userId, phone, address, city, country } = req.body;
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { phone, address, city, country },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            message: "Profile updated successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                address: user.address,
+                city: user.city,
+                country: user.country,
+            },
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// ── Admin Routes ──
+
+// GET all users (admin only)
+app.get("/api/admin/users", async (req, res) => {
+    try {
+        const adminId = req.headers["x-admin-id"];
+        if (!adminId) return res.status(401).json({ message: "Unauthorized" });
+
+        const admin = await User.findById(adminId);
+        if (!admin || admin.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
+
+        const users = await User.find().select("-password").sort({ createdAt: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE a user (admin only)
+app.delete("/api/admin/users/:id", async (req, res) => {
+    try {
+        const adminId = req.headers["x-admin-id"];
+        if (!adminId) return res.status(401).json({ message: "Unauthorized" });
+
+        const admin = await User.findById(adminId);
+        if (!admin || admin.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
+
+        if (req.params.id === adminId) {
+            return res.status(400).json({ message: "You cannot delete your own account" });
+        }
+
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.json({ message: "User deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT update user role (admin only)
+app.put("/api/admin/users/:id/role", async (req, res) => {
+    try {
+        const adminId = req.headers["x-admin-id"];
+        if (!adminId) return res.status(401).json({ message: "Unauthorized" });
+
+        const admin = await User.findById(adminId);
+        if (!admin || admin.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
+
+        const { role } = req.body;
+        if (!["user", "admin"].includes(role)) {
+            return res.status(400).json({ message: "Invalid role" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { role },
+            { new: true }
+        ).select("-password");
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.json({ message: "Role updated successfully", user });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

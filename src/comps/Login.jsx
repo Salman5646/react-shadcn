@@ -13,7 +13,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
-
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 export function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -23,6 +23,18 @@ export function Login() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+
+        // Regex validations
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{6,}$/;
+
+        if (!emailRegex.test(email)) {
+            return toast.error("Please enter a valid email address");
+        }
+        if (!passwordRegex.test(password)) {
+            return toast.error("Password must cotain atleast 6 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character");
+        }
+
         setLoading(true);
 
         try {
@@ -116,9 +128,37 @@ export function Login() {
                     </form>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                    <Button variant="outline" className="w-full">
-                        Login with Google
-                    </Button>
+                    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                        <GoogleLogin
+                            onSuccess={async (credentialResponse) => {
+                                try {
+                                    const res = await fetch('/api/google-auth', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ token: credentialResponse.credential }),
+                                    });
+                                    const data = await res.json();
+                                    if (res.ok) {
+                                        localStorage.setItem("user", JSON.stringify(data.user));
+                                        window.dispatchEvent(new Event("userChange"));
+                                        if (!data.user.phone) {
+                                            toast.success("Please complete your profile");
+                                            navigate("/complete-profile");
+                                        } else {
+                                            toast.success("Login successful!");
+                                            navigate("/");
+                                        }
+                                    } else {
+                                        toast.error(data.message || "Google login failed");
+                                    }
+                                } catch (err) {
+                                    toast.error("Something went wrong with Google login");
+                                }
+                            }}
+                            onError={() => toast.error('Google login failed')}
+                            width={320}
+                        />
+                    </GoogleOAuthProvider>
                 </CardFooter>
             </Card>
         </div>

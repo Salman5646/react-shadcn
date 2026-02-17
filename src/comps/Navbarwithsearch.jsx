@@ -44,6 +44,17 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
     useEffect(() => {
         const savedUser = JSON.parse(localStorage.getItem("user"));
         if (savedUser) setUser(savedUser);
+
+        const handleStorageChange = () => {
+            const current = JSON.parse(localStorage.getItem("user"));
+            setUser(current);
+        };
+        window.addEventListener("storage", handleStorageChange);
+        window.addEventListener("userChange", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+            window.removeEventListener("userChange", handleStorageChange);
+        };
     }, []);
 
     const handleLogout = () => {
@@ -51,6 +62,7 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
         setTimeout(() => {
             localStorage.removeItem("user");
             setUser(null);
+            window.dispatchEvent(new Event("userChange"));
             setLoggingOut(false);
             navigate("/");
         }, 1000);
@@ -79,21 +91,43 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                 {/* DESKTOP MENU */}
                 <NavigationMenu className="hidden md:block">
                     <NavigationMenuList>
-                        <NavigationMenuItem>
-                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                <Link to="/">Home</Link>
-                            </NavigationMenuLink>
-                        </NavigationMenuItem>
-                        <NavigationMenuItem>
-                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                <Link to="/about">About us</Link>
-                            </NavigationMenuLink>
-                        </NavigationMenuItem>
-                        <NavigationMenuItem>
-                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                <Link to="/contact">Contact</Link>
-                            </NavigationMenuLink>
-                        </NavigationMenuItem>
+                        {user?.role === "admin" ? (
+                            <>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link to="/">Dashboard</Link>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link to="/admin/users">Users</Link>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link to="/admin/products">Products</Link>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                            </>
+                        ) : (
+                            <>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link to="/">Home</Link>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link to="/about">About us</Link>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                        <Link to="/contact">Contact</Link>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                            </>
+                        )}
                         {user ? (
                             <NavigationMenuItem>
                                 <AlertDialog>
@@ -150,9 +184,19 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                                 Main navigation menu for mobile devices
                             </SheetDescription>
                             <div className="flex flex-col gap-4 mt-8">
-                                <Link to="/" className="text-lg font-medium hover:text-gray-400">Home</Link>
-                                <Link to="/about" className="text-lg font-medium hover:text-gray-400">About us</Link>
-                                <Link to="/contact" className="text-lg font-medium hover:text-gray-400">Contact</Link>
+                                {user?.role === "admin" ? (
+                                    <>
+                                        <Link to="/" className="text-lg font-medium hover:text-gray-400">Dashboard</Link>
+                                        <Link to="/admin/users" className="text-lg font-medium hover:text-gray-400">Users</Link>
+                                        <Link to="/admin/products" className="text-lg font-medium hover:text-gray-400">Products</Link>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link to="/" className="text-lg font-medium hover:text-gray-400">Home</Link>
+                                        <Link to="/about" className="text-lg font-medium hover:text-gray-400">About us</Link>
+                                        <Link to="/contact" className="text-lg font-medium hover:text-gray-400">Contact</Link>
+                                    </>
+                                )}
                                 {user ? (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>

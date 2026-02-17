@@ -4,10 +4,13 @@ import {
     InputGroupInput,
 } from "@/components/ui/input-group"
 import { Search } from "lucide-react"
+import { useSidebar } from "@/components/ui/sidebar"
 
 export function Searchbar({ searchTerm, setSearchTerm, resultCount }) {
+    const { open } = useSidebar();
+
     return (
-        <InputGroup className="max-w-64 md:max-w-xl bg-white dark:border-white">
+        <InputGroup className={`max-w-56 ${open ? "md:max-w-md" : "md:max-w-xl"} bg-white dark:border-white`}>
             <InputGroupInput
                 placeholder="Search..."
                 value={searchTerm}

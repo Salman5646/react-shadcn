@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
 import { toast } from "sonner"
 import { countryCityData } from "@/data/countryCities"
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 export function Signup() {
     const [form, setForm] = useState({
@@ -42,6 +43,29 @@ export function Signup() {
 
     const handleSignup = async (e) => {
         e.preventDefault();
+
+        // Regex validations
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{6,}$/;
+        const phoneRegex = /^\+?\d{10}$/;
+        const nameRegex = /^[a-zA-Z\s]{2,}$/;
+
+        if (!nameRegex.test(form.name)) {
+            return toast.error("Name must contain only letters and be at least 2 characters");
+        }
+        if (!emailRegex.test(form.email)) {
+            return toast.error("Please enter a valid email address");
+        }
+        if (!passwordRegex.test(form.password)) {
+            return toast.error("Password must cotain atleast 6 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character");
+        }
+        if (!phoneRegex.test(form.phone.replace(/[\s-]/g, ""))) {
+            return toast.error("Please enter a valid phone number (10 digits)");
+        }
+        const addressRegex = /^[a-zA-Z0-9\s,.\-/#]{5,}$/;
+        if (!addressRegex.test(form.address.trim())) {
+            return toast.error("Please enter a valid delivery address (at least 5 characters)");
+        }
         setLoading(true);
 
         try {
@@ -144,9 +168,38 @@ export function Signup() {
                     </form>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                    <Button variant="outline" className="w-full">
-                        Sign up with Google
-                    </Button>
+                    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                        <GoogleLogin
+                            onSuccess={async (credentialResponse) => {
+                                try {
+                                    const res = await fetch('/api/google-auth', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ token: credentialResponse.credential }),
+                                    });
+                                    const data = await res.json();
+                                    if (res.ok) {
+                                        localStorage.setItem("user", JSON.stringify(data.user));
+                                        window.dispatchEvent(new Event("userChange"));
+                                        if (!data.user.phone) {
+                                            toast.success("Please complete your profile");
+                                            navigate("/complete-profile");
+                                        } else {
+                                            toast.success("Account created successfully!");
+                                            navigate("/");
+                                        }
+                                    } else {
+                                        toast.error(data.message || "Google sign up failed");
+                                    }
+                                } catch (err) {
+                                    toast.error("Something went wrong with Google sign up");
+                                }
+                            }}
+                            onError={() => toast.error('Google sign up failed')}
+                            width={350}
+                            text="signup_with"
+                        />
+                    </GoogleOAuthProvider>
                 </CardFooter>
             </Card>
         </div >

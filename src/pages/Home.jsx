@@ -139,7 +139,7 @@ export function Home() {
                         ) : (
                             <div className="col-span-full text-center py-10">
                                 <p className="text-gray-500 dark:text-gray-400 text-lg">
-                                    No products found matching "{searchTerm}"
+                                    No products found !
                                 </p>
                             </div>
                         )}

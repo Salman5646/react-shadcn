@@ -21,11 +21,23 @@ export function AppSidebar() {
     useEffect(() => {
         const savedUser = JSON.parse(localStorage.getItem("user"));
         if (savedUser) setUser(savedUser);
+
+        const handleStorageChange = () => {
+            const current = JSON.parse(localStorage.getItem("user"));
+            setUser(current);
+        };
+        window.addEventListener("storage", handleStorageChange);
+        window.addEventListener("userChange", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+            window.removeEventListener("userChange", handleStorageChange);
+        };
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem("user");
         setUser(null);
+        window.dispatchEvent(new Event("userChange"));
         navigate("/");
     };
 
@@ -60,45 +72,67 @@ export function AppSidebar() {
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <SidebarMenuButton isActive>
-                                    <span className="flex items-center gap-2"><Link to="/">🏠 Home</Link></span>
+                                    <span className="flex items-center gap-2"><Link to="/">🏠 {user?.role === "admin" ? "Dashboard" : "Home"}</Link></span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton tooltip="Check your orders">
-                                    <span className="flex items-center gap-2">📦 My Orders</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton>
-                                    <span className="flex items-center gap-2">❤️ Wishlist</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
+                            {user?.role === "admin" ? (
+                                <>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>
+                                            <span className="flex items-center gap-2"><Link to="/admin/users">👥 Users</Link></span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>
+                                            <span className="flex items-center gap-2"><Link to="/admin/products">📦 Products</Link></span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </>
+                            ) : (
+                                <>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton tooltip="Check your orders">
+                                            <span className="flex items-center gap-2">📦 My Orders</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>
+                                            <span className="flex items-center gap-2">❤️ Wishlist</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </>
+                            )}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
 
                 <SidebarSeparator />
 
-                {/* Categories Group */}
-                <SidebarGroup>
-                    <SidebarGroupLabel>Categories</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton>✨ Electronics</SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton>💎 Jewelry</SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton>👕 Men's Clothing</SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton>👗 Women's Clothing</SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                {/* Categories Group - Hide for admins */}
+                {user?.role !== "admin" && (
+                    <>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Categories</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>✨ Electronics</SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>💎 Jewelry</SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>👕 Men's Clothing</SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>👗 Women's Clothing</SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                        <SidebarSeparator />
+                    </>
+                )}
 
                 <SidebarSeparator />
 
@@ -119,11 +153,11 @@ export function AppSidebar() {
                                             <span className="text-xs text-muted-foreground">📞 {user.phone}</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton>⚙️ Account Settings</SidebarMenuButton>
+                                    </SidebarMenuItem>
                                 </>
                             )}
-                            <SidebarMenuItem>
-                                <SidebarMenuButton>⚙️ Account Settings</SidebarMenuButton>
-                            </SidebarMenuItem>
                             <SidebarMenuItem>
                                 {user ? (
                                     <AlertDialog>

@@ -60,7 +60,7 @@ export function Footer() {
                         <p className="text-sm text-muted-foreground">
                             Join our newsletter to stay up to date on features and releases.
                         </p>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 text-black">
                             <input
                                 type="email"
                                 placeholder="Enter your email"
