@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# User requested ignores
+imagely/
+public/imgly/
