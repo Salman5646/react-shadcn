@@ -82,11 +82,7 @@ export function AppSidebar() {
                                             <span className="flex items-center gap-2"><Link to="/admin/users">👥 Users</Link></span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton>
-                                            <span className="flex items-center gap-2"><Link to="/admin/products">📦 Products</Link></span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
+
                                 </>
                             ) : (
                                 <>

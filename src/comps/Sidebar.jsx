@@ -140,7 +140,7 @@ const Sidebar = React.forwardRef(({
     ...props
 }, ref) => {
     const sidebarContext = useSidebar()
-    console.log("Sidebar context (comps):", sidebarContext) // Debugging context
+
     const { isMobile, state, setOpenMobile } = sidebarContext
     const openMobileState = sidebarContext.openMobile
     let sidebarWidth = "var(--sidebar-width)"

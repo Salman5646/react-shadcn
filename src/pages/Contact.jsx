@@ -39,7 +39,7 @@ export function Contact() {
     })
 
     function onSubmit(values) {
-        console.log("Form Data:", values)
+        // console.log("Form Data:", values)
         alert("Message sent! (Check console for data)")
     }
 

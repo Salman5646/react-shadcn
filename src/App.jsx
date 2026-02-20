@@ -14,7 +14,6 @@ import Cart from "./comps/Cart";
 import { Signup } from "./comps/Signup";
 import { CompleteProfile } from "./comps/CompleteProfile";
 import { AdminUsers } from "./pages/AdminUsers";
-import { AdminProducts } from "./pages/AdminProducts";
 export function App() {
   return (
     <>
@@ -27,7 +26,6 @@ export function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/products" element={<AdminProducts />} />
       </Routes>
       <Toaster />
     </>

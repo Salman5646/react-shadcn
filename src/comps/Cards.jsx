@@ -8,48 +8,68 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { AlertDialog } from "./AlertDialog"
+import {
+    AlertDialog as UIAlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { AlertDialog as AddToCartDialog } from "./AlertDialog"
 import { ProductDetails } from "./ProductDetails"
 import { cn } from "@/lib/utils"
+import { Trash2 } from "lucide-react"
 
 // Change this line to explicitly pull out your custom props
-export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease }) {
+export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease, isAdmin, onDelete }) {
     const isCart = behaviour === "cart";
     const showQuantity = behaviour === "cart" || behaviour === "quantity";
 
     const Content = (
         <div className={cn(
-            "h-full flex flex-col transition-colors cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900/50",
+            "h-full flex flex-col cursor-pointer",
         )}>
-            {/* Overlay and Image */}
-            <div className="absolute inset-0 z-30 aspect-video bg-black/35 pointer-events-none" />
-            <img
-                src={item.product_image}
-                alt={item.product_name}
-                className="relative z-20 aspect-video w-full object-cover brightness-60 dark:brightness-40"
-            />
+            {/* Image Container with Overflow Hidden for Zoom Effect */}
+            <div className="relative aspect-square overflow-hidden bg-muted">
+                {/* Overlay */}
+                <div className="absolute inset-0 z-10 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
-            <CardHeader className="p-1.5 md:p-6 space-y-1">
-                <div className="mb-2">
-                    <Badge className="text-[10px] md:text-xs px-1 py-0.5" variant={variant}>
+                <img
+                    src={item.product_image}
+                    alt={item.product_name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute top-1 right-1 md:top-2 md:right-2 z-20">
+                    <Badge className="text-[9px] md:text-[10px] uppercase tracking-wider font-semibold shadow-sm backdrop-blur-md bg-white/90 text-black dark:bg-black/90 dark:text-white border-0 px-1.5 py-0.5" variant="secondary">
                         {item.category}
                     </Badge>
                 </div>
-                <CardTitle className="text-small md:text-base line-clamp-1 leading-tight">
-                    {item.product_name}
-                </CardTitle>
-                <CardDescription className="text-xs md:text-small line-clamp-3">
-                    {item.product_description}
-                </CardDescription>
-                <CardContent className="p-0 text-small md:text-base">
-                    <p className="font-bold">${item.price}</p>
+            </div>
+
+            <CardHeader className="p-2 md:p-4 space-y-1 md:space-y-2 flex-1">
+                <div className="space-y-1">
+                    <CardTitle className="text-sm md:text-base font-semibold line-clamp-1 leading-tight group-hover:text-primary transition-colors">
+                        {item.product_name}
+                    </CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground line-clamp-2 min-h-[2rem] md:min-h-[2.5rem]">
+                        {item.product_description}
+                    </CardDescription>
+                </div>
+                <CardContent className="p-0 pt-1 md:pt-2 mt-auto">
+                    <p className="text-base md:text-lg font-bold text-primary">${item.price}</p>
                 </CardContent>
             </CardHeader>
         </div>
     );
 
     return (
-        <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col overflow-hidden">
+        <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col overflow-hidden group transition-all duration-300 hover:shadow-xl border-border/50 bg-card/50 backdrop-blur-sm">
+
+
 
             {/* Now we always wrap with ProductDetails so it's clickable everywhere */}
             <ProductDetails item={item}>
@@ -57,22 +77,22 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
             </ProductDetails>
 
 
-            <CardFooter className="p-1.5 md:p-3 mt-auto flex flex-row items-center gap-1.5 md:gap-2">
+            <CardFooter className="p-2 pt-0 md:p-4 md:pt-0 mt-auto">
                 {showQuantity ? (
-                    <div className="flex flex-row w-full items-center gap-1.5 md:gap-2">
+                    <div className="flex flex-row w-full items-center gap-1 md:gap-2">
                         {/* Integrated Quantity Pill */}
-                        <div className="flex items-center justify-between w-full md:flex-1 h-8 md:h-10 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 px-1">
+                        <div className="flex items-center justify-between flex-1 h-8 md:h-10 bg-muted/50 rounded-lg border border-border px-1">
                             <Button
-                                variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8"
+                                variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 hover:bg-background rounded-md"
                                 onClick={(e) => { e.stopPropagation(); onDecrease(); }}
                             > - </Button>
 
-                            <span className="text-sm font-mono font-bold">
+                            <span className="text-xs md:text-sm font-semibold">
                                 {item.quantity || 1}
                             </span>
 
                             <Button
-                                variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8"
+                                variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 hover:bg-background rounded-md"
                                 onClick={(e) => { e.stopPropagation(); onIncrease(); }}
                             > + </Button>
                         </div>
@@ -80,20 +100,49 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                         {/* Show Remove only on Cart page */}
                         {behaviour === "cart" && (
                             <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-white bg-red-500 hover:text-red-500 h-8 md:h-10 text-xs shrink-0 px-2"
+                                variant="destructive"
+                                size="icon"
+                                className="h-8 w-8 md:h-10 md:w-10 shrink-0 rounded-lg shadow-sm"
                                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
                             >
-                                Remove
+                                <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                         )}
                     </div>
+                ) : isAdmin ? (
+                    <UIAlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 font-semibold shadow-sm h-8 md:h-10 text-xs md:text-sm rounded-lg">
+                                <Trash2 className="mr-2 h-3 w-3 md:h-4 md:w-4" /> Delete
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the product
+                                    <strong> {item.product_name}</strong>.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete();
+                                    }}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                >
+                                    Delete
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </UIAlertDialog>
                 ) : (
-                    <AlertDialog
+                    <AddToCartDialog
                         title={item.product_name}
                         item={item}
-                        trigger={<Button className="w-full bg-black text-white dark:bg-white dark:text-black font-bold">Add to Cart</Button>}
+                        trigger={<Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm h-8 md:h-10 text-xs md:text-sm rounded-lg transition-transform active:scale-95 duration-200">Add to Cart</Button>}
                     />
                 )}
             </CardFooter>

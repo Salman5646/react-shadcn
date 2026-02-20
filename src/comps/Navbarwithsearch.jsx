@@ -76,153 +76,158 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                     <p className="mt-3 text-white text-sm font-medium">Logging out...</p>
                 </div>
             )}
-            <div className="bg-gray-900 dark:bg-black sticky top-0 z-50 flex w-full items-center justify-between py-4 px-4 md:px-8">
-                <Avatar className="border-none">
-                    <AvatarImage src={logo} alt="Logo" />
-                    <AvatarFallback>Logo</AvatarFallback>
-                </Avatar>
-                <Searchbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} resultCount={resultCount} />
-                <button
-                    onClick={toggleDarkMode}
-                    className="p bg-transparent dark:bg-black md:hidden shadow-lg z-50"
-                >
-                    {darkMode ? "🌙" : "☀️"}
-                </button>
-                {/* DESKTOP MENU */}
-                <NavigationMenu className="hidden md:block">
-                    <NavigationMenuList>
-                        {user?.role === "admin" ? (
-                            <>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/">Dashboard</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/admin/users">Users</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/admin/products">Products</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
-                            </>
-                        ) : (
-                            <>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/">Home</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/about">About us</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/contact">Contact</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
-                            </>
-                        )}
-                        {user ? (
-                            <NavigationMenuItem>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                            <button>Log Out</button>
-                                        </NavigationMenuLink>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                You will need to sign in again to access your account.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </NavigationMenuItem>
-                        ) : (
-                            <NavigationMenuItem>
-                                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                    <Link to="/login">Sign In</Link>
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                        )}
-                        <NavigationMenuItem>
-                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                <button
-                                    onClick={toggleDarkMode}
-                                    className="p-3 bg-white dark:bg-black shadow-lg z-50"
-                                >
-                                    {darkMode ? "🌙" : "☀️"}
-                                </button>
-                            </NavigationMenuLink>
-                        </NavigationMenuItem>
-                    </NavigationMenuList>
-                </NavigationMenu>
+            {/* Navbar Container */}
+            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="flex h-16 items-center w-full px-4 md:px-8 justify-between">
+                    <Avatar className="h-9 w-9 border border-border">
+                        <AvatarImage src={logo} alt="Logo" />
+                        <AvatarFallback>Logo</AvatarFallback>
+                    </Avatar>
 
-                {/* MOBILE MENU */}
-                <div className="md:hidden">
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" className="text-white p-0 hover:bg-transparent">
-                                <Menu className="h-6 w-6" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="right" className="h-100 bg-gray-900 text-white border-gray-800">
-                            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                            <SheetDescription className="sr-only">
-                                Main navigation menu for mobile devices
-                            </SheetDescription>
-                            <div className="flex flex-col gap-4 mt-8">
+                    <div className="flex-1 px-4 lg:px-8 max-w-2xl">
+                        <Searchbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} resultCount={resultCount} />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={toggleDarkMode}
+                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9 md:hidden"
+                        >
+                            {darkMode ? "🌙" : "☀️"}
+                        </button>
+
+                        {/* DESKTOP MENU */}
+                        <NavigationMenu className="hidden md:flex">
+                            <NavigationMenuList>
                                 {user?.role === "admin" ? (
                                     <>
-                                        <Link to="/" className="text-lg font-medium hover:text-gray-400">Dashboard</Link>
-                                        <Link to="/admin/users" className="text-lg font-medium hover:text-gray-400">Users</Link>
-                                        <Link to="/admin/products" className="text-lg font-medium hover:text-gray-400">Products</Link>
+                                        <NavigationMenuItem>
+                                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                                <Link to="/">Dashboard</Link>
+                                            </NavigationMenuLink>
+                                        </NavigationMenuItem>
+                                        <NavigationMenuItem>
+                                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                                <Link to="/admin/users">Users</Link>
+                                            </NavigationMenuLink>
+                                        </NavigationMenuItem>
+
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/" className="text-lg font-medium hover:text-gray-400">Home</Link>
-                                        <Link to="/about" className="text-lg font-medium hover:text-gray-400">About us</Link>
-                                        <Link to="/contact" className="text-lg font-medium hover:text-gray-400">Contact</Link>
+                                        <NavigationMenuItem>
+                                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                                <Link to="/">Home</Link>
+                                            </NavigationMenuLink>
+                                        </NavigationMenuItem>
+                                        <NavigationMenuItem>
+                                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                                <Link to="/about">About us</Link>
+                                            </NavigationMenuLink>
+                                        </NavigationMenuItem>
+                                        <NavigationMenuItem>
+                                            <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                                <Link to="/contact">Contact</Link>
+                                            </NavigationMenuLink>
+                                        </NavigationMenuItem>
                                     </>
                                 )}
                                 {user ? (
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <button className="text-lg font-medium hover:text-gray-400 text-left">Log Out</button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    You will need to sign in again to access your account.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <NavigationMenuItem>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <NavigationMenuLink asChild className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer">
+                                                    <button>Log Out</button>
+                                                </NavigationMenuLink>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        You will need to sign in again to access your account.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </NavigationMenuItem>
                                 ) : (
-                                    <Link to="/login" className="text-lg font-medium hover:text-gray-400">Sign In</Link>
+                                    <NavigationMenuItem>
+                                        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                            <Link to="/login">Sign In</Link>
+                                        </NavigationMenuLink>
+                                    </NavigationMenuItem>
                                 )}
-                            </div>
-                        </SheetContent>
-                    </Sheet>
+                                <NavigationMenuItem>
+                                    <NavigationMenuLink asChild className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50 cursor-pointer">
+                                        <button
+                                            onClick={toggleDarkMode}
+                                            className="h-full w-full"
+                                        >
+                                            {darkMode ? "🌙" : "☀️"}
+                                        </button>
+                                    </NavigationMenuLink>
+                                </NavigationMenuItem>
+                            </NavigationMenuList>
+                        </NavigationMenu>
+
+                        {/* MOBILE MENU */}
+                        <div className="md:hidden">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" className="h-9 w-9 p-0">
+                                        <Menu className="h-5 w-5" />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                                    <SheetDescription className="sr-only">
+                                        Main navigation menu for mobile devices
+                                    </SheetDescription>
+                                    <div className="flex flex-col gap-6 mt-8">
+                                        {user?.role === "admin" ? (
+                                            <>
+                                                <Link to="/" className="text-lg font-medium hover:text-primary transition-colors">Dashboard</Link>
+                                                <Link to="/admin/users" className="text-lg font-medium hover:text-primary transition-colors">Users</Link>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Link to="/" className="text-lg font-medium hover:text-primary transition-colors">Home</Link>
+                                                <Link to="/about" className="text-lg font-medium hover:text-primary transition-colors">About us</Link>
+                                                <Link to="/contact" className="text-lg font-medium hover:text-primary transition-colors">Contact</Link>
+                                            </>
+                                        )}
+                                        {user ? (
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <button className="text-lg font-medium hover:text-destructive text-left transition-colors text-muted-foreground">Log Out</button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            You will need to sign in again to access your account.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        ) : (
+                                            <Link to="/login" className="text-lg font-medium hover:text-primary transition-colors">Sign In</Link>
+                                        )}
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </header>
         </>
     )
 }

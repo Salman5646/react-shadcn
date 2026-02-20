@@ -30,7 +30,7 @@ export function AlertDialog({ trigger, title, item }) {
             description: `Added on ${new Date().toLocaleDateString()} at ${currentTime}`,
             action: {
                 label: "Close", // Changed 'Done' to 'Close' as requested
-                onClick: () => console.log("Toast closed"),
+                onClick: () => { },
             },
         });
     };

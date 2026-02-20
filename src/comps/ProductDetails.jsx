@@ -7,6 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from "@/components/ui/dialog"
 import { Star, PackageCheck } from "lucide-react" // New Icons
 const handleAddToCart = (product) => {
@@ -45,16 +46,29 @@ export function ProductDetails({ item, children }) {
             <DialogContent className="dark:bg-slate-900 dark:text-white text-black w-[95%] max-w-[500px] max-h-[90vh] overflow-y-auto rounded-lg border-gray-200 dark:border-slate-700">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold">{item.product_name}</DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Detailed view of {item.product_name}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex flex-col gap-6">
                     {/* Image Container */}
-                    <div className="bg-white p-4 rounded-xl flex justify-center">
+                    <div className="bg-white p-4 rounded-xl flex justify-center relative overflow-hidden group">
+                        {/* Background Image (Standard) */}
                         <img
                             src={item.product_image}
                             alt={item.product_name}
-                            className="h-56 object-contain"
+                            className={`h-56 object-contain transition-opacity duration-300 ${item.product_image_transparent ? 'opacity-100 group-hover:opacity-0' : ''}`}
                         />
+
+                        {/* Transparent Image (Revealed on Hover if available) */}
+                        {item.product_image_transparent && (
+                            <img
+                                src={item.product_image_transparent}
+                                alt={`${item.product_name} - Transparent`}
+                                className="absolute inset-0 m-auto h-56 object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            />
+                        )}
                     </div>
 
                     {/* Stats Row: Category & Price */}
@@ -94,7 +108,16 @@ export function ProductDetails({ item, children }) {
                     {/* Description Section */}
                     <div className="space-y-2">
                         <h4 className="text-sm font-semibold text-gray-500 uppercase">Description</h4>
-                        <div className="max-h-[120px] overflow-y-auto pr-2">
+                        <div className="max-h-[200px] overflow-y-auto pr-2">
+                            {item.product_image_transparent && (
+                                <div className="float-right ml-4 mb-2 w-24 h-24 bg-muted/20 rounded-lg p-1 flex items-center justify-center">
+                                    <img
+                                        src={item.product_image_transparent}
+                                        alt="Detail view"
+                                        className="max-w-full max-h-full object-contain drop-shadow-md"
+                                    />
+                                </div>
+                            )}
                             <p className="text-sm leading-relaxed dark:text-gray-300">
                                 {item.product_description}
                             </p>
@@ -106,7 +129,7 @@ export function ProductDetails({ item, children }) {
                     <DialogClose asChild>
                         <Button variant="outline" className="flex-1 sm:flex-none">Close</Button>
                     </DialogClose>
-                    
+
                 </DialogFooter>
             </DialogContent>
         </Dialog>
