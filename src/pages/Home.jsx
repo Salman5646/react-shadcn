@@ -3,10 +3,10 @@ import { Navbarwithsearch } from "../comps/Navbarwithsearch"
 import { useState, useEffect } from "react";
 import { Footer } from "../comps/Footer"
 import { Cards } from "../comps/Cards"
-import { removeBackground } from "@imgly/background-removal";
+
 import { ProductSkeleton } from "@/comps/ProductSkeleton";
 import { useSearchParams } from "react-router-dom"
-import { ShoppingCart, Plus, Trash2, Loader2 } from "lucide-react";
+import { ShoppingCart, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "../comps/AppSidebar"
@@ -41,7 +41,6 @@ export function Home() {
         price: "",
         category: "",
         product_image: "",
-        product_image_transparent: "",
     });
 
     useEffect(() => {
@@ -84,7 +83,7 @@ export function Home() {
     }, [darkMode]);
 
     const [cartItems, setCartItems] = useState([]);
-    const [isProcessingBg, setIsProcessingBg] = useState(false);
+
 
     useEffect(() => {
         const updateCart = () => {
@@ -106,6 +105,11 @@ export function Home() {
         fetch("/api/products")
             .then((res) => res.json())
             .then((data) => {
+                // Shuffle products randomly
+                for (let i = data.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [data[i], data[j]] = [data[j], data[i]];
+                }
                 setOrders(data);
                 setIsLoading(false);
             })
@@ -158,7 +162,6 @@ export function Home() {
                     price: "",
                     category: "",
                     product_image: "",
-                    product_image_transparent: "",
                 });
             } else {
                 toast.error(data.message || "Failed to add product");
@@ -302,92 +305,34 @@ export function Home() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="image">Product Image</Label>
                                         <div className="flex flex-col gap-4">
-                                            {/* Standard Image & Auto-Generated Transparent Image */}
                                             <div>
-                                                <Label htmlFor="image" className="mb-2 block text-xs font-medium text-gray-500">Product Image (Background will be auto-removed for description)</Label>
+                                                <Label htmlFor="image" className="mb-2 block text-xs font-medium text-gray-500">Product Image</Label>
                                                 <Input
                                                     id="image"
                                                     type="file"
                                                     accept="image/*"
-                                                    onChange={async (e) => {
+                                                    onChange={(e) => {
                                                         const file = e.target.files[0];
                                                         if (file) {
-                                                            // 1. Set Standard Image Preview
                                                             const reader = new FileReader();
                                                             reader.onloadend = () => {
                                                                 setFormData(prev => ({ ...prev, product_image: reader.result }));
                                                             };
                                                             reader.readAsDataURL(file);
-
-                                                            // 2. Auto-Generate Transparent Image
-                                                            setIsProcessingBg(true);
-                                                            try {
-                                                                // Configure for better reliability
-                                                                const config = {
-                                                                    publicPath: window.location.origin + "/imgly/", // Use local assets
-                                                                    progress: (key, current, total) => {
-                                                                        console.log(`Downloading ${key}: ${Math.round(current / total * 100)}%`);
-                                                                    },
-                                                                    debug: true, // Enable debug logs
-                                                                    device: 'cpu' // Force CPU if GPU issues cause hangs
-                                                                };
-
-                                                                const blob = await removeBackground(file, config);
-                                                                const transparentReader = new FileReader();
-                                                                transparentReader.onloadend = () => {
-                                                                    setFormData(prev => ({
-                                                                        ...prev,
-                                                                        product_image_transparent: transparentReader.result
-                                                                    }));
-                                                                    setIsProcessingBg(false);
-                                                                };
-                                                                transparentReader.readAsDataURL(blob);
-                                                            } catch (error) {
-                                                                console.error("Background removal failed:", error);
-                                                                toast.error("Background Removal Failed", {
-                                                                    description: "Could not auto-remove background. Please try another image or check your connection.",
-                                                                });
-                                                                setIsProcessingBg(false);
-                                                            }
                                                         }
                                                     }}
                                                     className="border-gray-300"
                                                 />
 
-                                                <div className="grid grid-cols-2 gap-4 mt-2">
-                                                    {/* Standard Preview */}
-                                                    {formData.product_image && (
-                                                        <div className="relative w-full h-32 rounded-md overflow-hidden border border-gray-200">
-                                                            <div className="absolute top-1 left-1 bg-black/50 text-white text-[10px] px-1 rounded">Original</div>
-                                                            <img
-                                                                src={formData.product_image}
-                                                                alt="Original Preview"
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
-
-                                                    {/* Transparent Preview */}
-                                                    {(formData.product_image || isProcessingBg) && (
-                                                        <div className="relative w-full h-32 rounded-md overflow-hidden border border-gray-200 bg-checkerboard flex items-center justify-center">
-                                                            <div className="absolute inset-0 bg-[url('https://t3.ftcdn.net/jpg/03/76/74/61/360_F_376746124_L3oq3g98i2bT4d31w2V8s887j4z76x60.jpg')] opacity-20 bg-repeat bg-center bg-contain"></div>
-                                                            <div className="absolute top-1 left-1 bg-green-600/90 text-white text-[10px] px-1 rounded z-20">No Background</div>
-
-                                                            {isProcessingBg ? (
-                                                                <div className="z-20 flex flex-col items-center">
-                                                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                                                    <span className="text-xs text-muted-foreground mt-1">Processing...</span>
-                                                                </div>
-                                                            ) : formData.product_image_transparent ? (
-                                                                <img
-                                                                    src={formData.product_image_transparent}
-                                                                    alt="Transparent Preview"
-                                                                    className="relative z-10 w-full h-full object-contain"
-                                                                />
-                                                            ) : null}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                {formData.product_image && (
+                                                    <div className="relative w-full h-32 rounded-md overflow-hidden border border-gray-200 mt-2">
+                                                        <img
+                                                            src={formData.product_image}
+                                                            alt="Preview"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

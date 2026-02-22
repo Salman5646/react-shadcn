@@ -55,9 +55,11 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                     <CardTitle className="text-sm md:text-base font-semibold line-clamp-1 leading-tight group-hover:text-primary transition-colors">
                         {item.product_name}
                     </CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground line-clamp-2 min-h-[2rem] md:min-h-[2.5rem]">
-                        {item.product_description}
-                    </CardDescription>
+                    <div className="overflow-hidden max-h-[2.5rem] md:max-h-[3rem]">
+                        <CardDescription className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                            {item.product_description}
+                        </CardDescription>
+                    </div>
                 </div>
                 <CardContent className="p-0 pt-1 md:pt-2 mt-auto">
                     <p className="text-base md:text-lg font-bold text-primary">${item.price}</p>

@@ -15,7 +15,7 @@ import {
 import React, { useState, useEffect } from "react"
 import { Searchbar } from "./Searchbar"
 import logo from "../images/logo.png"
-import { Menu } from "lucide-react"
+import { Menu, Home, Users, Info, Phone, LogIn, LogOut } from "lucide-react"
 import {
     Sheet,
     SheetContent,
@@ -178,32 +178,49 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                         <div className="md:hidden">
                             <Sheet>
                                 <SheetTrigger asChild>
-                                    <Button variant="ghost" className="h-9 w-9 p-0">
+                                    <Button variant="ghost" className="h-9 w-9 p-0 rounded-full hover:bg-accent transition-colors">
                                         <Menu className="h-5 w-5" />
                                     </Button>
                                 </SheetTrigger>
-                                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                                <SheetContent
+                                    side="right"
+                                    className="w-[260px] border-l border-border/50 bg-background/95 backdrop-blur-xl p-0"
+                                    style={{ height: 'auto', bottom: 'auto' }}
+                                >
                                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                                     <SheetDescription className="sr-only">
                                         Main navigation menu for mobile devices
                                     </SheetDescription>
-                                    <div className="flex flex-col gap-6 mt-8">
+                                    <nav className="flex flex-col px-3 pt-14 pb-4">
                                         {user?.role === "admin" ? (
                                             <>
-                                                <Link to="/" className="text-lg font-medium hover:text-primary transition-colors">Dashboard</Link>
-                                                <Link to="/admin/users" className="text-lg font-medium hover:text-primary transition-colors">Users</Link>
+                                                <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/80 hover:bg-accent hover:text-foreground transition-colors">
+                                                    <Home className="h-4 w-4 text-muted-foreground" /> Dashboard
+                                                </Link>
+                                                <Link to="/admin/users" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/80 hover:bg-accent hover:text-foreground transition-colors">
+                                                    <Users className="h-4 w-4 text-muted-foreground" /> Users
+                                                </Link>
                                             </>
                                         ) : (
                                             <>
-                                                <Link to="/" className="text-lg font-medium hover:text-primary transition-colors">Home</Link>
-                                                <Link to="/about" className="text-lg font-medium hover:text-primary transition-colors">About us</Link>
-                                                <Link to="/contact" className="text-lg font-medium hover:text-primary transition-colors">Contact</Link>
+                                                <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/80 hover:bg-accent hover:text-foreground transition-colors">
+                                                    <Home className="h-4 w-4 text-muted-foreground" /> Home
+                                                </Link>
+                                                <Link to="/about" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/80 hover:bg-accent hover:text-foreground transition-colors">
+                                                    <Info className="h-4 w-4 text-muted-foreground" /> About us
+                                                </Link>
+                                                <Link to="/contact" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/80 hover:bg-accent hover:text-foreground transition-colors">
+                                                    <Phone className="h-4 w-4 text-muted-foreground" /> Contact
+                                                </Link>
                                             </>
                                         )}
+                                        <div className="my-2 h-px bg-border" />
                                         {user ? (
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <button className="text-lg font-medium hover:text-destructive text-left transition-colors text-muted-foreground">Log Out</button>
+                                                    <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left w-full">
+                                                        <LogOut className="h-4 w-4" /> Log Out
+                                                    </button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
@@ -219,9 +236,11 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                         ) : (
-                                            <Link to="/login" className="text-lg font-medium hover:text-primary transition-colors">Sign In</Link>
+                                            <Link to="/login" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors">
+                                                <LogIn className="h-4 w-4" /> Sign In
+                                            </Link>
                                         )}
-                                    </div>
+                                    </nav>
                                 </SheetContent>
                             </Sheet>
                         </div>

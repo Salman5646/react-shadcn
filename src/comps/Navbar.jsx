@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/navigation-menu"
 import React, { useState, useEffect } from "react"
 import logo from "../images/logo.png"
-import { Menu } from "lucide-react"
+import { Menu, Home, Users, Info, Phone, LogIn, LogOut } from "lucide-react"
 import {
     Sheet,
     SheetContent,
@@ -96,11 +96,7 @@ export function Navbar() {
                                         <Link to="/admin/users">Users</Link>
                                     </NavigationMenuLink>
                                 </NavigationMenuItem>
-                                <NavigationMenuItem>
-                                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                        <Link to="/admin/products">Products</Link>
-                                    </NavigationMenuLink>
-                                </NavigationMenuItem>
+
                             </>
                         ) : (
                             <>
@@ -157,33 +153,49 @@ export function Navbar() {
                 <div className="md:hidden">
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" className="text-white p-0 hover:bg-transparent">
-                                <Menu className="h-6 w-6" />
+                            <Button variant="ghost" className="text-white p-0 hover:bg-white/10 rounded-full h-9 w-9 transition-colors">
+                                <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="right" className="h-100 bg-gray-900 text-white border-gray-800">
+                        <SheetContent
+                            side="right"
+                            className="w-[260px] border-l border-white/10 bg-gray-950/95 backdrop-blur-xl text-white p-0"
+                            style={{ height: 'auto', bottom: 'auto' }}
+                        >
                             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                             <SheetDescription className="sr-only">
                                 Main navigation menu for mobile devices
                             </SheetDescription>
-                            <div className="flex flex-col gap-4 mt-8">
+                            <nav className="flex flex-col px-3 pt-14 pb-4">
                                 {user?.role === "admin" ? (
                                     <>
-                                        <Link to="/" className="text-lg font-medium hover:text-gray-400">Dashboard</Link>
-                                        <Link to="/admin/users" className="text-lg font-medium hover:text-gray-400">Users</Link>
-                                        <Link to="/admin/products" className="text-lg font-medium hover:text-gray-400">Products</Link>
+                                        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
+                                            <Home className="h-4 w-4 text-gray-400" /> Dashboard
+                                        </Link>
+                                        <Link to="/admin/users" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
+                                            <Users className="h-4 w-4 text-gray-400" /> Users
+                                        </Link>
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/" className="text-lg font-medium hover:text-gray-400">Home</Link>
-                                        <Link to="/about" className="text-lg font-medium hover:text-gray-400">About us</Link>
-                                        <Link to="/contact" className="text-lg font-medium hover:text-gray-400">Contact</Link>
+                                        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
+                                            <Home className="h-4 w-4 text-gray-400" /> Home
+                                        </Link>
+                                        <Link to="/about" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
+                                            <Info className="h-4 w-4 text-gray-400" /> About us
+                                        </Link>
+                                        <Link to="/contact" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
+                                            <Phone className="h-4 w-4 text-gray-400" /> Contact
+                                        </Link>
                                     </>
                                 )}
+                                <div className="my-2 h-px bg-white/10" />
                                 {user ? (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <button className="text-lg font-medium hover:text-gray-400 text-left">Log Out</button>
+                                            <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left w-full">
+                                                <LogOut className="h-4 w-4" /> Log Out
+                                            </button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
@@ -199,9 +211,11 @@ export function Navbar() {
                                         </AlertDialogContent>
                                     </AlertDialog>
                                 ) : (
-                                    <Link to="/login" className="text-lg font-medium hover:text-gray-400">Sign In</Link>
+                                    <Link to="/login" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors">
+                                        <LogIn className="h-4 w-4" /> Sign In
+                                    </Link>
                                 )}
-                            </div>
+                            </nav>
                         </SheetContent>
                     </Sheet>
                 </div>

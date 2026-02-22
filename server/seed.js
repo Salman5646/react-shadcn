@@ -4,39 +4,56 @@ import Product from "./models/Product.js";
 
 dotenv.config();
 
-const sampleProducts = [
-    {
-        product_name: "Wireless Headphones",
-        product_description: "High-quality noise-cancelling wireless headphones with 20-hour battery life.",
-        product_image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60",
-        category: "Electronics",
-        price: 199.99,
-        rating: { rate: 4.5, count: 120 },
-    },
-    {
-        product_name: "Smart Watch",
-        product_description: "Track your fitness, heart rate, and notifications on the go.",
-        product_image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60",
-        category: "Wearables",
-        price: 149.5,
-        rating: { rate: 4.2, count: 89 },
-    },
-    {
-        product_name: "Running Shoes",
-        product_description: "Lightweight, durable running shoes for all terrains.",
-        product_image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60",
-        category: "Footwear",
-        price: 89.99,
-        rating: { rate: 4.7, count: 210 },
-    },
-    {
-        product_name: "Leather Backpack",
-        product_description: "Stylish and spacious leather backpack for daily commute.",
-        product_image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop&q=60",
-        category: "Accessories",
-        price: 120.0,
-        rating: { rate: 4.3, count: 65 },
-    },
+const products = [
+    // ── Electronics ──
+    { product_name: "Sony WH-1000XM5 Headphones", product_description: "Industry-leading noise canceling wireless headphones with exceptional sound quality, 30-hour battery life, and ultra-comfortable design. Features Auto NC Optimizer and Speak-to-Chat technology.", product_image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=500", product_image_transparent: "https://pngimg.com/d/headphones_PNG101959.png", category: "Electronics", price: 349.99, rating: { rate: 4.8, count: 431 } },
+    { product_name: "Apple iPad Air M2", product_description: "Supercharged by M2 chip with a stunning 11-inch Liquid Retina display. Perfect for creative professionals and students with support for Apple Pencil Pro and Magic Keyboard.", product_image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500", product_image_transparent: "https://pngimg.com/d/ipad_PNG12428.png", category: "Electronics", price: 599.99, rating: { rate: 4.7, count: 289 } },
+    { product_name: "Samsung Galaxy S24 Ultra", product_description: "The ultimate smartphone with a built-in S Pen, 200MP camera, titanium frame, and Galaxy AI features. Includes a 6.8-inch Dynamic AMOLED 2X display.", product_image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=500", product_image_transparent: "https://pngimg.com/d/smartphone_PNG8526.png", category: "Electronics", price: 1299.99, rating: { rate: 4.6, count: 567 } },
+    { product_name: "JBL Charge 5 Speaker", product_description: "Portable Bluetooth speaker with powerful JBL Pro Sound, bold design, and IP67 waterproof and dustproof rating. Up to 20 hours of playtime with built-in powerbank.", product_image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500", product_image_transparent: "https://pngimg.com/d/speaker_PNG68217.png", category: "Electronics", price: 179.99, rating: { rate: 4.5, count: 823 } },
+    { product_name: "Logitech MX Master 3S Mouse", product_description: "Advanced wireless mouse with MagSpeed scroll, ergonomic design, and 8K DPI tracking on any surface. Works on up to 3 devices with USB-C quick charging.", product_image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500", product_image_transparent: "https://pngimg.com/d/computer_mouse_PNG7673.png", category: "Electronics", price: 99.99, rating: { rate: 4.7, count: 1205 } },
+    { product_name: "Nintendo Switch OLED", product_description: "Vivid 7-inch OLED screen with wide adjustable stand, enhanced audio, and 64GB internal storage. Play at home or on the go with versatile Joy-Con controllers.", product_image: "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=500", product_image_transparent: "https://pngimg.com/d/nintendo_switch_PNG23.png", category: "Electronics", price: 349.99, rating: { rate: 4.6, count: 945 } },
+    { product_name: "Canon EOS R50 Camera", product_description: "Compact mirrorless camera with 24.2MP APS-C sensor, 4K video recording, and advanced subject detection AF. Perfect for content creators and photography enthusiasts.", product_image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=500", product_image_transparent: "https://pngimg.com/d/photo_camera_PNG12095.png", category: "Electronics", price: 679.99, rating: { rate: 4.4, count: 312 } },
+    { product_name: "Apple AirPods Pro 2", product_description: "Active Noise Cancellation with Adaptive Transparency. Personalized Spatial Audio with dynamic head tracking. MagSafe charging case with built-in speaker and lanyard loop.", product_image: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=500", product_image_transparent: "https://pngimg.com/d/headphones_PNG101946.png", category: "Electronics", price: 249.99, rating: { rate: 4.7, count: 2103 } },
+    { product_name: "Portable Power Bank 20000mAh", product_description: "Ultra-slim portable charger with 20000mAh capacity and 65W fast charging. Charges laptops, tablets, and phones simultaneously with 3 output ports and LED display.", product_image: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500", product_image_transparent: "https://pngimg.com/d/power_bank_PNG94.png", category: "Electronics", price: 59.99, rating: { rate: 4.5, count: 789 } },
+
+    // ── Clothing ──
+    { product_name: "Classic Leather Jacket", product_description: "Premium genuine leather biker jacket with quilted lining. Features asymmetric zip closure, multiple pockets, and adjustable belt. Timeless style that gets better with age.", product_image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500", product_image_transparent: "https://pngimg.com/d/jacket_PNG8046.png", category: "Clothing", price: 259.99, rating: { rate: 4.5, count: 178 } },
+    { product_name: "Slim Fit Chino Pants", product_description: "Versatile stretch cotton chinos with a modern slim fit. Features hidden flex waistband for all-day comfort. Available in multiple colors for any occasion.", product_image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500", product_image_transparent: "https://pngimg.com/d/trousers_PNG10288.png", category: "Clothing", price: 49.99, rating: { rate: 4.3, count: 456 } },
+    { product_name: "Merino Wool Sweater", product_description: "Ultra-soft 100% merino wool crewneck sweater. Naturally temperature-regulating, moisture-wicking, and odor-resistant. Perfect layering piece for all seasons.", product_image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500", product_image_transparent: "https://pngimg.com/d/sweater_PNG68143.png", category: "Clothing", price: 89.99, rating: { rate: 4.6, count: 234 } },
+    { product_name: "Running Sneakers Pro", product_description: "Engineered mesh upper with responsive foam cushioning for maximum comfort during long runs. Reflective details for visibility and rubber outsole for superior grip.", product_image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500", product_image_transparent: "https://pngimg.com/d/running_shoes_PNG5816.png", category: "Clothing", price: 129.99, rating: { rate: 4.4, count: 892 } },
+    { product_name: "Denim Trucker Jacket", product_description: "Iconic denim jacket in medium wash with classic button front closure. Features chest pockets, adjustable waist tabs, and a comfortable regular fit.", product_image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=500", product_image_transparent: "https://pngimg.com/d/jacket_PNG8043.png", category: "Clothing", price: 79.99, rating: { rate: 4.2, count: 345 } },
+    { product_name: "Linen Summer Shirt", product_description: "Breathable pure linen shirt perfect for warm weather. Relaxed fit with a mandarin collar, chest pocket, and rolled-up sleeve tabs. Cool and effortlessly stylish.", product_image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500", product_image_transparent: "https://pngimg.com/d/shirt_PNG8092.png", category: "Clothing", price: 59.99, rating: { rate: 4.3, count: 198 } },
+    { product_name: "Fleece Zip Hoodie", product_description: "Cozy heavyweight fleece hoodie with full zip front. Features kangaroo pockets, ribbed cuffs, and an adjustable drawstring hood. Ultra-soft brushed interior.", product_image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500", product_image_transparent: "https://pngimg.com/d/hoodie_PNG17.png", category: "Clothing", price: 69.99, rating: { rate: 4.5, count: 612 } },
+    { product_name: "Tailored Blazer", product_description: "Modern slim-fit blazer in premium wool blend. Notch lapels, two-button closure, and functional pockets. Fully lined with a smooth satin finish.", product_image: "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=500", product_image_transparent: "https://pngimg.com/d/blazer_PNG8.png", category: "Clothing", price: 199.99, rating: { rate: 4.4, count: 156 } },
+    { product_name: "Athletic Joggers", product_description: "Performance joggers with 4-way stretch fabric and moisture-wicking technology. Tapered leg, zippered pockets, and elastic waistband with internal drawcord.", product_image: "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=500", product_image_transparent: "https://pngimg.com/d/trousers_PNG10299.png", category: "Clothing", price: 54.99, rating: { rate: 4.3, count: 723 } },
+    { product_name: "Cotton Graphic Tee", product_description: "Premium 100% organic cotton graphic t-shirt with a relaxed fit. Features vibrant screen-printed design that won't fade. Pre-shrunk and double-stitched for durability.", product_image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500", product_image_transparent: "https://pngimg.com/d/tshirt_PNG5448.png", category: "Clothing", price: 29.99, rating: { rate: 4.2, count: 1023 } },
+
+    // ── Home & Kitchen ──
+    { product_name: "Nespresso Vertuo Coffee Maker", product_description: "Brew barista-quality coffee at home with centrifusion technology. Makes 5 cup sizes from espresso to alto. Includes Aeroccino milk frother for lattes and cappuccinos.", product_image: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=500", product_image_transparent: "https://pngimg.com/d/coffee_machine_PNG16873.png", category: "Home & Kitchen", price: 199.99, rating: { rate: 4.6, count: 1567 } },
+    { product_name: "Cast Iron Dutch Oven 6Qt", product_description: "Enameled cast iron Dutch oven perfect for braising, baking, and slow cooking. Superior heat retention and distribution with self-basting lid. Oven safe to 500°F.", product_image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=500", product_image_transparent: "https://pngimg.com/d/cooking_pot_PNG99224.png", category: "Home & Kitchen", price: 89.99, rating: { rate: 4.8, count: 892 } },
+    { product_name: "Robot Vacuum Pro", product_description: "Smart robot vacuum with LiDAR navigation, 5000Pa suction, and auto-empty dock. Creates precise room maps and supports voice control via Alexa and Google Assistant.", product_image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=500", product_image_transparent: "https://pngimg.com/d/vacuum_cleaner_PNG97.png", category: "Home & Kitchen", price: 449.99, rating: { rate: 4.5, count: 678 } },
+    { product_name: "Bamboo Cutting Board Set", product_description: "Set of 3 organic bamboo cutting boards in multiple sizes. Naturally antimicrobial, knife-friendly, and eco-sustainable. Features deep juice grooves and easy-grip handles.", product_image: "https://images.unsplash.com/photo-1594226801341-41427b4e5c22?w=500", product_image_transparent: "https://pngimg.com/d/cutting_board_PNG89.png", category: "Home & Kitchen", price: 34.99, rating: { rate: 4.4, count: 445 } },
+    { product_name: "Stainless Steel Knife Set", product_description: "Professional 8-piece knife set with high-carbon German stainless steel blades. Includes chef's knife, bread knife, santoku, and more with an acacia wood block.", product_image: "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500", product_image_transparent: "https://pngimg.com/d/kitchen_knife_PNG99531.png", category: "Home & Kitchen", price: 149.99, rating: { rate: 4.6, count: 534 } },
+    { product_name: "Smart Air Purifier", product_description: "HEPA air purifier covering up to 1200 sq ft. Real-time air quality monitoring with app control. Removes 99.97% of allergens, dust, and odors with whisper-quiet operation.", product_image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=500", product_image_transparent: "https://pngimg.com/d/fan_PNG87.png", category: "Home & Kitchen", price: 229.99, rating: { rate: 4.5, count: 367 } },
+    { product_name: "Ceramic Cookware Set", product_description: "10-piece non-toxic ceramic non-stick cookware set. PFAS-free, metal utensil safe, and dishwasher safe. Includes frying pans, saucepans, and stockpot with tempered glass lids.", product_image: "https://images.unsplash.com/photo-1584990347449-a2d4c2c044c2?w=500", product_image_transparent: "https://pngimg.com/d/frying_pan_PNG98342.png", category: "Home & Kitchen", price: 179.99, rating: { rate: 4.3, count: 298 } },
+
+    // ── Books ──
+    { product_name: "Atomic Habits", product_description: "By James Clear. An easy and proven way to build good habits and break bad ones. Discover tiny changes that deliver remarkable results through the four laws of behavior change.", product_image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500", product_image_transparent: "https://pngimg.com/d/book_PNG51090.png", category: "Books", price: 16.99, rating: { rate: 4.8, count: 4523 } },
+    { product_name: "The Psychology of Money", product_description: "By Morgan Housel. Timeless lessons on wealth, greed, and happiness. 19 short stories exploring the strange ways people think about money and how to make better financial decisions.", product_image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500", product_image_transparent: "https://pngimg.com/d/book_PNG51080.png", category: "Books", price: 14.99, rating: { rate: 4.7, count: 3201 } },
+    { product_name: "Clean Code", product_description: "By Robert C. Martin. A handbook of agile software craftsmanship. Learn to write clean, readable, and maintainable code through real-world examples and best practices.", product_image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500", product_image_transparent: "https://pngimg.com/d/book_PNG51085.png", category: "Books", price: 39.99, rating: { rate: 4.5, count: 1876 } },
+    { product_name: "Dune", product_description: "By Frank Herbert. The bestselling science fiction novel of all time. Set on the desert planet Arrakis, it tells the story of Paul Atreides and his family's battle for control of the most valuable substance in the universe.", product_image: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500", product_image_transparent: "https://pngimg.com/d/book_PNG51102.png", category: "Books", price: 12.99, rating: { rate: 4.6, count: 5678 } },
+    { product_name: "Sapiens: A Brief History", product_description: "By Yuval Noah Harari. A groundbreaking narrative of humanity's creation and evolution. Explores how biology and history have defined us and enhanced our understanding of what it means to be human.", product_image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500", product_image_transparent: "https://pngimg.com/d/book_PNG51091.png", category: "Books", price: 18.99, rating: { rate: 4.6, count: 2945 } },
+    { product_name: "The Design of Everyday Things", product_description: "By Don Norman. A powerful primer on how good design makes products work better. Explores the principles behind everyday objects and how design affects our interactions with technology.", product_image: "https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=500", product_image_transparent: "https://pngimg.com/d/book_PNG51087.png", category: "Books", price: 22.99, rating: { rate: 4.4, count: 987 } },
+
+    // ── Accessories ──
+    { product_name: "Minimalist Leather Wallet", product_description: "Slim RFID-blocking leather bifold wallet with 6 card slots and a bill compartment. Crafted from full-grain Italian leather that develops a beautiful patina over time.", product_image: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500", product_image_transparent: "https://pngimg.com/d/wallet_PNG7529.png", category: "Accessories", price: 49.99, rating: { rate: 4.5, count: 1234 } },
+    { product_name: "Aviator Sunglasses", product_description: "Classic aviator sunglasses with polarized lenses and lightweight metal frame. 100% UV400 protection with anti-glare coating. Includes premium carrying case and cleaning cloth.", product_image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500", product_image_transparent: "https://pngimg.com/d/sunglasses_PNG8600.png", category: "Accessories", price: 79.99, rating: { rate: 4.3, count: 567 } },
+    { product_name: "Canvas Backpack", product_description: "Vintage-style waxed canvas backpack with genuine leather accents. Features padded laptop sleeve (fits 15-inch), multiple compartments, and water-resistant coating.", product_image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", product_image_transparent: "https://pngimg.com/d/backpack_PNG6335.png", category: "Accessories", price: 89.99, rating: { rate: 4.6, count: 445 } },
+    { product_name: "Stainless Steel Watch", product_description: "Classic analog watch with Japanese quartz movement and sapphire crystal glass. 42mm case with luminescent hands and water resistance up to 100 meters.", product_image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=500", product_image_transparent: "https://pngimg.com/d/watches_PNG9862.png", category: "Accessories", price: 159.99, rating: { rate: 4.4, count: 678 } },
+    { product_name: "Silk Neck Tie Set", product_description: "Luxury handmade silk tie set with matching pocket square and cufflinks. Available in classic patterns including solid, striped, and paisley. Presented in a premium gift box.", product_image: "https://images.unsplash.com/photo-1598033129183-c4f50c736c10?w=500", product_image_transparent: "https://pngimg.com/d/tie_PNG8181.png", category: "Accessories", price: 44.99, rating: { rate: 4.2, count: 234 } },
+    { product_name: "Leather Belt", product_description: "Full-grain leather dress belt with brushed nickel buckle. 35mm width, fits perfectly with both casual and formal attire. Single-prong buckle with smooth rotation.", product_image: "https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=500", product_image_transparent: "https://pngimg.com/d/belt_PNG6813.png", category: "Accessories", price: 39.99, rating: { rate: 4.3, count: 890 } },
+    { product_name: "Weekender Duffel Bag", product_description: "Spacious travel duffel bag made from durable canvas with leather trim. Features detachable shoulder strap, shoe compartment, and multiple organization pockets. Ideal for 2-3 day trips.", product_image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500", product_image_transparent: "https://pngimg.com/d/suitcase_PNG10738.png", category: "Accessories", price: 119.99, rating: { rate: 4.5, count: 345 } },
+    { product_name: "Wireless Charging Pad", product_description: "Ultra-slim Qi wireless charger compatible with all Qi-enabled devices. 15W fast charging with LED indicator and anti-slip surface. Includes USB-C cable.", product_image: "https://images.unsplash.com/photo-1586816879360-004f5b0c51e5?w=500", product_image_transparent: "https://pngimg.com/d/charger_PNG98824.png", category: "Accessories", price: 29.99, rating: { rate: 4.4, count: 1567 } },
 ];
 
 async function seed() {
@@ -44,14 +61,30 @@ async function seed() {
         await mongoose.connect(process.env.MONGO_URI);
         console.log("Connected to MongoDB");
 
-        await Product.deleteMany({});
-        console.log("Cleared existing products");
+        // Clear existing products
+        const deleted = await Product.deleteMany({});
+        console.log(`Cleared ${deleted.deletedCount} existing products`);
 
-        const inserted = await Product.insertMany(sampleProducts);
-        console.log(`Seeded ${inserted.length} products`);
+        // Insert seed data
+        const inserted = await Product.insertMany(products);
+        console.log(`Successfully seeded ${inserted.length} products!`);
+
+        // Show category breakdown
+        const categories = {};
+        inserted.forEach(p => {
+            categories[p.category] = (categories[p.category] || 0) + 1;
+        });
+        console.log("\nCategory breakdown:");
+        Object.entries(categories).forEach(([cat, count]) => {
+            console.log(`  ${cat}: ${count} products`);
+        });
+
+        // Verify transparent images
+        const withTransparent = inserted.filter(p => p.product_image_transparent).length;
+        console.log(`\nProducts with transparent images: ${withTransparent}/${inserted.length}`);
 
         await mongoose.disconnect();
-        process.exit(0);
+        console.log("\nDone! Database disconnected.");
     } catch (err) {
         console.error("Seed error:", err.message);
         process.exit(1);

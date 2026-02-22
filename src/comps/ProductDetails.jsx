@@ -58,17 +58,9 @@ export function ProductDetails({ item, children }) {
                         <img
                             src={item.product_image}
                             alt={item.product_name}
-                            className={`h-56 object-contain transition-opacity duration-300 ${item.product_image_transparent ? 'opacity-100 group-hover:opacity-0' : ''}`}
+                            className={"h-56 object-contain transition-opacity duration-300"}
                         />
 
-                        {/* Transparent Image (Revealed on Hover if available) */}
-                        {item.product_image_transparent && (
-                            <img
-                                src={item.product_image_transparent}
-                                alt={`${item.product_name} - Transparent`}
-                                className="absolute inset-0 m-auto h-56 object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                            />
-                        )}
                     </div>
 
                     {/* Stats Row: Category & Price */}
@@ -109,15 +101,7 @@ export function ProductDetails({ item, children }) {
                     <div className="space-y-2">
                         <h4 className="text-sm font-semibold text-gray-500 uppercase">Description</h4>
                         <div className="max-h-[200px] overflow-y-auto pr-2">
-                            {item.product_image_transparent && (
-                                <div className="float-right ml-4 mb-2 w-24 h-24 bg-muted/20 rounded-lg p-1 flex items-center justify-center">
-                                    <img
-                                        src={item.product_image_transparent}
-                                        alt="Detail view"
-                                        className="max-w-full max-h-full object-contain drop-shadow-md"
-                                    />
-                                </div>
-                            )}
+
                             <p className="text-sm leading-relaxed dark:text-gray-300">
                                 {item.product_description}
                             </p>
