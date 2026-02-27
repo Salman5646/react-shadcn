@@ -3,7 +3,7 @@ import { Navbarwithsearch } from "../comps/Navbarwithsearch"
 import { useState, useEffect } from "react";
 import { Footer } from "../comps/Footer"
 import { Cards } from "../comps/Cards"
-
+import { ListFilter, X, ArrowUpDown } from "lucide-react";
 import { ProductSkeleton } from "@/comps/ProductSkeleton";
 import { useSearchParams } from "react-router-dom"
 import { ShoppingCart, Plus, Trash2 } from "lucide-react";
@@ -25,6 +25,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { verifySession } from "@/lib/cookieUtils"
+import * as cartService from "@/lib/cartService"
 
 export function Home() {
     const [orders, setOrders] = useState([]);
@@ -35,6 +37,10 @@ export function Home() {
     );
     const [user, setUser] = useState(null);
     const [openAdd, setOpenAdd] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState("All");
+    const [priceSort, setPriceSort] = useState("none"); // "none" | "low" | "high"
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("All");
     const [formData, setFormData] = useState({
         product_name: "",
         product_description: "",
@@ -43,11 +49,37 @@ export function Home() {
         product_image: "",
     });
 
+    // Extract unique categories from products
+    const categories = ["All", ...new Set(orders.map(p => p.category).filter(Boolean))];
+
+    const activeFilterCount = (selectedCategory !== "All" ? 1 : 0) + (priceSort !== "none" ? 1 : 0);
+
+    // Derive product labels
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const getProductLabels = (product) => {
+        const labels = [];
+        if (product.createdAt && new Date(product.createdAt) > sevenDaysAgo) labels.push("New");
+        if (product.rating?.rate >= 4) labels.push("Hot");
+        if (product.price < 50) labels.push("Sale");
+        return labels;
+    };
+
+    const productTabs = [
+        { key: "All", label: "All" },
+        { key: "New", label: "New Arrivals" },
+        { key: "Hot", label: "Hot" },
+        { key: "Sale", label: "On Sale" },
+    ];
+
+    const resetFilters = () => {
+        setSelectedCategory("All");
+        setPriceSort("none");
+        setActiveTab("All");
+    };
+
     useEffect(() => {
         const checkUser = () => {
-            const saved = JSON.parse(localStorage.getItem("user"));
-            if (saved) setUser(saved);
-            else setUser(null);
+            verifySession().then(verified => setUser(verified));
         };
         checkUser();
         window.addEventListener("storage", checkUser);
@@ -58,18 +90,9 @@ export function Home() {
         }
     }, []);
 
-    const addToCart = (product) => {
-        const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-        const existingItemIndex = savedCart.findIndex(item => item.product_name === product.product_name);
-
-        if (existingItemIndex > -1) {
-            savedCart[existingItemIndex].quantity = (savedCart[existingItemIndex].quantity || 1) + 1;
-        } else {
-            savedCart.push({ ...product, quantity: 1 });
-        }
-
-        localStorage.setItem("cart", JSON.stringify(savedCart));
-        window.dispatchEvent(new Event("cartUpdate"));
+    const addToCart = async (product) => {
+        const items = await cartService.addToCart(product, user);
+        setCartItems(items);
     };
 
     useEffect(() => {
@@ -86,15 +109,20 @@ export function Home() {
 
 
     useEffect(() => {
-        const updateCart = () => {
-            const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-            setCartItems(savedCart);
+        const updateCart = async () => {
+            const items = await cartService.getCart(user);
+            setCartItems(items);
         };
 
         updateCart();
-        window.addEventListener("storage", updateCart);
-        return () => window.removeEventListener("storage", updateCart);
-    }, []);
+        const handler = () => updateCart();
+        window.addEventListener("cartUpdate", handler);
+        window.addEventListener("storage", handler);
+        return () => {
+            window.removeEventListener("cartUpdate", handler);
+            window.removeEventListener("storage", handler);
+        };
+    }, [user]);
 
     const toggleDarkMode = () => setDarkMode(!darkMode);
     const initialSearch = searchParams ? searchParams.get("q") : "";
@@ -119,28 +147,44 @@ export function Home() {
             });
     }, []);
 
-    const filteredOrders = orders.filter(order =>
-        order.product_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredOrders = (() => {
+        let result = orders.filter(order =>
+            order.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-    const handleUpdateQuantity = (product, delta) => {
-        const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-        const existingIndex = savedCart.findIndex(item => item.product_name === product.product_name);
-
-        if (existingIndex > -1) {
-            const newQty = (savedCart[existingIndex].quantity || 1) + delta;
-            if (newQty < 1) {
-                savedCart.splice(existingIndex, 1);
-            } else {
-                savedCart[existingIndex].quantity = newQty;
-            }
-        } else if (delta > 0) {
-            savedCart.push({ ...product, quantity: 1 });
+        // Category filter
+        if (selectedCategory !== "All") {
+            result = result.filter(order => order.category === selectedCategory);
         }
 
-        localStorage.setItem("cart", JSON.stringify(savedCart));
-        setCartItems(savedCart);
-        window.dispatchEvent(new Event("cartUpdate"));
+        // Price sort
+        if (priceSort === "low") {
+            result = [...result].sort((a, b) => a.price - b.price);
+        } else if (priceSort === "high") {
+            result = [...result].sort((a, b) => b.price - a.price);
+        }
+
+        // Tab filter
+        if (activeTab !== "All") {
+            result = result.filter(order => getProductLabels(order).includes(activeTab));
+        }
+
+        return result;
+    })();
+
+    const handleUpdateQuantity = async (product, delta) => {
+        // Find current item in cart to compute new quantity
+        const currentItem = cartItems.find(item => item.product_name === product.product_name);
+        const currentQty = currentItem ? (currentItem.quantity || 1) : 0;
+        const newQty = currentQty + delta;
+
+        if (currentItem) {
+            const items = await cartService.updateQuantity(currentItem, newQty, user);
+            setCartItems(items);
+        } else if (delta > 0) {
+            const items = await cartService.addToCart(product, user);
+            setCartItems(items);
+        }
     };
 
     const handleAddProduct = async (e) => {
@@ -203,6 +247,35 @@ export function Home() {
                 />
 
                 <main className="flex-1 p-4 md:p-6 lg:p-8 relative">
+                    {/* Product Label Tabs */}
+                    <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {productTabs.map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
+                                className={cn(
+                                    "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap transition-all duration-200",
+                                    activeTab === tab.key
+                                        ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                                )}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                        {/* Filter Button */}
+                        <button
+                            onClick={() => setFilterOpen(!filterOpen)}
+                            className="relative ml-auto flex-shrink-0 bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-full p-2 transition-all duration-200 cursor-pointer"
+                        >
+                            <ListFilter size={20} />
+                            {activeFilterCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                     <div className="flex flex-wrap justify-center -mx-2 md:-mx-3">
                         {isLoading ? (
                             Array.from({ length: 12 }).map((_, index) => (
@@ -218,7 +291,7 @@ export function Home() {
                                     <div key={index} className="w-1/2 md:w-1/3 lg:w-1/4 px-2 md:px-3 mb-4 md:mb-6 flex justify-center">
                                         <Cards
                                             item={cartItem || product}
-                                            behaviour={cartItem ? "quantity" : "home"}
+                                            behaviour={user?.role === "admin" ? "home" : (cartItem ? "quantity" : "home")}
                                             onIncrease={() => handleUpdateQuantity(product, 1)}
                                             onDecrease={() => handleUpdateQuantity(product, -1)}
                                             variant="default"
@@ -234,15 +307,101 @@ export function Home() {
                                     <ShoppingCart className="h-10 w-10 text-muted-foreground/50" />
                                 </div>
                                 <h3 className="text-xl font-semibold mb-2">No products found</h3>
-                                <p className="text-muted-foreground max-w-sm">
-                                    We couldn't find any products matching your search. Try different keywords or browse all items.
-                                </p>
+
                             </div>
                         )}
                     </div>
 
                 </main>
 
+
+                {/* Filter Panel */}
+                {filterOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <div
+                            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]"
+                            onClick={() => setFilterOpen(false)}
+                        />
+                        {/* Panel */}
+                        <div className="fixed top-16 right-4 z-[70] w-72 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden animate-in slide-in-from-right-2 fade-in duration-200">
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Filters</h3>
+                                <div className="flex items-center gap-2">
+                                    {activeFilterCount > 0 && (
+                                        <button
+                                            onClick={resetFilters}
+                                            className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+                                        >
+                                            Clear all
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setFilterOpen(false)}
+                                        className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Category Section */}
+                            <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
+                                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Category</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {categories.map((cat) => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setSelectedCategory(cat)}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                                                selectedCategory === cat
+                                                    ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                                            )}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Price Sort Section */}
+                            <div className="px-4 py-3">
+                                <p className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Sort by Price</p>
+                                <div className="flex gap-1.5">
+                                    {[
+                                        { value: "none", label: "Default" },
+                                        { value: "low", label: "Low → High" },
+                                        { value: "high", label: "High → Low" },
+                                    ].map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => setPriceSort(opt.value)}
+                                            className={cn(
+                                                "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                                                priceSort === opt.value
+                                                    ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                                            )}
+                                        >
+                                            {opt.value !== "none" && <ArrowUpDown size={10} />}
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Results count */}
+                            <div className="px-4 py-2.5 bg-gray-50 dark:bg-zinc-800/50 text-center">
+                                <p className="text-xs text-gray-500 dark:text-zinc-400">
+                                    Showing <span className="font-semibold text-gray-900 dark:text-white">{filteredOrders.length}</span> product{filteredOrders.length !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                )}
                 <AccountButton />
                 {/* Admin Add Product Button */}
                 {user?.role === "admin" && (
@@ -354,7 +513,7 @@ export function Home() {
                         <div className="relative">
                             <ShoppingCart
                                 size={40}
-                                className="dark:bg-white dark:text-black bg-black text-white border-gray-200 rounded-full p-2 shadow-lg"
+                                className="bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-full p-2 transition-all duration-200 shadow-none"
                             />
                             {cartItems.length > 0 && (
                                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white border-2 border-white dark:border-slate-900">

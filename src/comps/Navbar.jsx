@@ -23,6 +23,7 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { verifySession, serverLogout } from "@/lib/cookieUtils"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,12 +42,10 @@ export function Navbar() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-        if (savedUser) setUser(savedUser);
+        verifySession().then(verified => setUser(verified));
 
         const handleStorageChange = () => {
-            const current = JSON.parse(localStorage.getItem("user"));
-            setUser(current);
+            verifySession().then(verified => setUser(verified));
         };
         window.addEventListener("storage", handleStorageChange);
         window.addEventListener("userChange", handleStorageChange);
@@ -58,8 +57,8 @@ export function Navbar() {
 
     const handleLogout = () => {
         setLoggingOut(true);
-        setTimeout(() => {
-            localStorage.removeItem("user");
+        setTimeout(async () => {
+            await serverLogout();
             setUser(null);
             window.dispatchEvent(new Event("userChange"));
             setLoggingOut(false);
@@ -75,7 +74,7 @@ export function Navbar() {
                     <p className="mt-3 text-white text-sm font-medium">Logging out...</p>
                 </div>
             )}
-            <div className="bg-gray-900 dark:bg-black sticky top-0 z-50 flex w-full items-center justify-between py-4 px-4 md:px-8">
+            <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-transparent sticky top-0 z-50 flex w-full items-center justify-between py-4 px-4 md:px-8 transition-colors duration-300">
                 <Avatar className="border-none">
                     <Link to="/"><AvatarImage src={logo} alt="Logo" /></Link>
                     <AvatarFallback>Logo</AvatarFallback>
@@ -153,13 +152,13 @@ export function Navbar() {
                 <div className="md:hidden">
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" className="text-white p-0 hover:bg-white/10 rounded-full h-9 w-9 transition-colors">
+                            <Button variant="ghost" className="dark:text-white p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full h-9 w-9 transition-colors">
                                 <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
                         <SheetContent
                             side="right"
-                            className="w-[260px] border-l border-white/10 bg-gray-950/95 backdrop-blur-xl text-white p-0"
+                            className="w-[260px] border-l border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl text-black dark:text-white p-0"
                             style={{ height: 'auto', bottom: 'auto' }}
                         >
                             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
@@ -169,27 +168,27 @@ export function Navbar() {
                             <nav className="flex flex-col px-3 pt-14 pb-4">
                                 {user?.role === "admin" ? (
                                     <>
-                                        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
-                                            <Home className="h-4 w-4 text-gray-400" /> Dashboard
+                                        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors">
+                                            <Home className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Dashboard
                                         </Link>
-                                        <Link to="/admin/users" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
-                                            <Users className="h-4 w-4 text-gray-400" /> Users
+                                        <Link to="/admin/users" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors">
+                                            <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Users
                                         </Link>
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
-                                            <Home className="h-4 w-4 text-gray-400" /> Home
+                                        <Link to="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors">
+                                            <Home className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Home
                                         </Link>
-                                        <Link to="/about" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
-                                            <Info className="h-4 w-4 text-gray-400" /> About us
+                                        <Link to="/about" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors">
+                                            <Info className="h-4 w-4 text-gray-500 dark:text-gray-400" /> About us
                                         </Link>
-                                        <Link to="/contact" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
-                                            <Phone className="h-4 w-4 text-gray-400" /> Contact
+                                        <Link to="/contact" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors">
+                                            <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" /> Contact
                                         </Link>
                                     </>
                                 )}
-                                <div className="my-2 h-px bg-white/10" />
+                                <div className="my-2 h-px bg-gray-200 dark:bg-white/10" />
                                 {user ? (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>

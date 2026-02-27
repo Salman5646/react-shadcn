@@ -3,18 +3,37 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import cookieParser from "cookie-parser";
 import Product from "./models/Product.js";
 import User from "./models/User.js";
+import Cart from "./models/Cart.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const COOKIE_SECRET = process.env.COOKIE_SECRET || "default-dev-secret-change-in-production";
+
+// ── Cookie Signing Helpers ──
+function signUserData(userData) {
+    const payload = JSON.stringify(userData);
+    return crypto.createHmac("sha256", COOKIE_SECRET).update(payload).digest("hex");
+}
+
+function verifyUserData(userData, signature) {
+    const expected = signUserData(userData);
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+}
+
+// ── Cookie Config ──
+const COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax", maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 // ── Middleware ──
-app.use(cors());
+app.use(cors({ credentials: true }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(cookieParser());
 
 // ── Routes ──
 
@@ -96,18 +115,22 @@ app.post("/api/register", async (req, res) => {
             phone, address, city, country,
         });
 
+        // Normalize to plain JSON (converts ObjectId to string) so HMAC matches cookie round-trip
+        const userData = JSON.parse(JSON.stringify({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            country: user.country,
+        }));
+        const signature = signUserData(userData);
+        res.cookie("user_sig", signature, COOKIE_OPTIONS);
         res.status(201).json({
             message: "Account created successfully",
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                address: user.address,
-                city: user.city,
-                country: user.country,
-            },
+            user: userData,
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -131,18 +154,22 @@ app.post("/api/login", async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
+        // Normalize to plain JSON (converts ObjectId to string) so HMAC matches cookie round-trip
+        const userData = JSON.parse(JSON.stringify({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            country: user.country,
+        }));
+        const signature = signUserData(userData);
+        res.cookie("user_sig", signature, COOKIE_OPTIONS);
         res.json({
             message: "Login successful",
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                address: user.address,
-                city: user.city,
-                country: user.country,
-            },
+            user: userData,
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -186,18 +213,22 @@ app.post("/api/google-auth", async (req, res) => {
             });
         }
 
+        // Normalize to plain JSON (converts ObjectId to string) so HMAC matches cookie round-trip
+        const userData = JSON.parse(JSON.stringify({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            country: user.country,
+        }));
+        const signature = signUserData(userData);
+        res.cookie("user_sig", signature, COOKIE_OPTIONS);
         res.json({
             message: "Login successful",
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                address: user.address,
-                city: user.city,
-                country: user.country,
-            },
+            user: userData,
         });
     } catch (err) {
         console.error("Google auth error:", err.message);
@@ -208,14 +239,21 @@ app.post("/api/google-auth", async (req, res) => {
 // PUT update user profile (for Google users completing their profile)
 app.put("/api/update-profile", async (req, res) => {
     try {
-        const { userId, phone, address, city, country } = req.body;
+        const { userId, name, phone, address, city, country } = req.body;
         if (!userId) {
             return res.status(400).json({ message: "User ID is required" });
         }
 
+        const updateFields = {};
+        if (name !== undefined) updateFields.name = name;
+        if (phone !== undefined) updateFields.phone = phone;
+        if (address !== undefined) updateFields.address = address;
+        if (city !== undefined) updateFields.city = city;
+        if (country !== undefined) updateFields.country = country;
+
         const user = await User.findByIdAndUpdate(
             userId,
-            { phone, address, city, country },
+            updateFields,
             { new: true }
         );
 
@@ -223,33 +261,87 @@ app.put("/api/update-profile", async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        // Normalize to plain JSON (converts ObjectId to string) so HMAC matches cookie round-trip
+        const userData = JSON.parse(JSON.stringify({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            country: user.country,
+        }));
+        const signature = signUserData(userData);
+        res.cookie("user_sig", signature, COOKIE_OPTIONS);
         res.json({
             message: "Profile updated successfully",
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-                address: user.address,
-                city: user.city,
-                country: user.country,
-            },
+            user: userData,
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
+// ── Session Verification ──
+
+// GET /api/me — verify the user cookie against the httpOnly signature
+app.get("/api/me", (req, res) => {
+    try {
+        const userCookie = req.cookies.user;
+        const sigCookie = req.cookies.user_sig;
+        if (!userCookie || !sigCookie) {
+            return res.status(401).json({ message: "Not logged in" });
+        }
+        const userData = JSON.parse(userCookie);
+        if (!verifyUserData(userData, sigCookie)) {
+            // Cookie was tampered with — clear everything
+            res.clearCookie("user");
+            res.clearCookie("user_sig");
+            return res.status(403).json({ message: "Session invalid: cookie was tampered with" });
+        }
+        res.json({ user: userData });
+    } catch (err) {
+        res.clearCookie("user");
+        res.clearCookie("user_sig");
+        return res.status(403).json({ message: "Session invalid" });
+    }
+});
+
+// POST /api/logout — clear httpOnly cookies
+app.post("/api/logout", (req, res) => {
+    res.clearCookie("user");
+    res.clearCookie("user_sig");
+    res.json({ message: "Logged out successfully" });
+});
+
+// ── Admin Middleware (verify httpOnly signed cookie) ──
+function verifySignedCookie(req, res, next) {
+    try {
+        const userCookie = req.cookies.user;
+        const sigCookie = req.cookies.user_sig;
+        if (!userCookie || !sigCookie) {
+            return res.status(401).json({ message: "Unauthorized: not logged in" });
+        }
+        const userData = JSON.parse(userCookie);
+        if (!verifyUserData(userData, sigCookie)) {
+            res.clearCookie("user");
+            res.clearCookie("user_sig");
+            return res.status(403).json({ message: "Forbidden: cookie was tampered with" });
+        }
+        req.verifiedUser = userData;
+        next();
+    } catch (err) {
+        return res.status(403).json({ message: "Forbidden: invalid cookie data" });
+    }
+}
+
 // ── Admin Routes ──
 
 // GET all users (admin only)
-app.get("/api/admin/users", async (req, res) => {
+app.get("/api/admin/users", verifySignedCookie, async (req, res) => {
     try {
-        const adminId = req.headers["x-admin-id"];
-        if (!adminId) return res.status(401).json({ message: "Unauthorized" });
-
-        const admin = await User.findById(adminId);
+        const admin = req.verifiedUser;
         if (!admin || admin.role !== "admin") {
             return res.status(403).json({ message: "Access denied. Admin only." });
         }
@@ -262,17 +354,14 @@ app.get("/api/admin/users", async (req, res) => {
 });
 
 // DELETE a user (admin only)
-app.delete("/api/admin/users/:id", async (req, res) => {
+app.delete("/api/admin/users/:id", verifySignedCookie, async (req, res) => {
     try {
-        const adminId = req.headers["x-admin-id"];
-        if (!adminId) return res.status(401).json({ message: "Unauthorized" });
-
-        const admin = await User.findById(adminId);
+        const admin = req.verifiedUser;
         if (!admin || admin.role !== "admin") {
             return res.status(403).json({ message: "Access denied. Admin only." });
         }
 
-        if (req.params.id === adminId) {
+        if (req.params.id === admin.id) {
             return res.status(400).json({ message: "You cannot delete your own account" });
         }
 
@@ -286,12 +375,9 @@ app.delete("/api/admin/users/:id", async (req, res) => {
 });
 
 // PUT update user role (admin only)
-app.put("/api/admin/users/:id/role", async (req, res) => {
+app.put("/api/admin/users/:id/role", verifySignedCookie, async (req, res) => {
     try {
-        const adminId = req.headers["x-admin-id"];
-        if (!adminId) return res.status(401).json({ message: "Unauthorized" });
-
-        const admin = await User.findById(adminId);
+        const admin = req.verifiedUser;
         if (!admin || admin.role !== "admin") {
             return res.status(403).json({ message: "Access denied. Admin only." });
         }
@@ -310,6 +396,157 @@ app.put("/api/admin/users/:id/role", async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         res.json({ message: "Role updated successfully", user });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// ── Cart Routes (authenticated users only) ──
+
+// Helper: populate cart and format items for the frontend
+async function getPopulatedCart(userId) {
+    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    if (!cart) return [];
+    return cart.items
+        .filter(item => item.productId) // skip items whose product was deleted
+        .map(item => ({
+            _id: item.productId._id,
+            productId: item.productId._id,
+            product_name: item.productId.product_name,
+            product_description: item.productId.product_description,
+            product_image: item.productId.product_image,
+            price: item.productId.price,
+            category: item.productId.category,
+            rating: item.productId.rating,
+            quantity: item.quantity,
+        }));
+}
+
+// GET /api/cart — fetch user's cart
+app.get("/api/cart", verifySignedCookie, async (req, res) => {
+    try {
+        const items = await getPopulatedCart(req.verifiedUser.id);
+        res.json(items);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// POST /api/cart — add item to cart (or increment quantity if exists)
+app.post("/api/cart", verifySignedCookie, async (req, res) => {
+    try {
+        const { productId, quantity } = req.body;
+        let cart = await Cart.findOne({ userId: req.verifiedUser.id });
+
+        if (!cart) {
+            cart = new Cart({ userId: req.verifiedUser.id, items: [] });
+        }
+
+        const existingIndex = cart.items.findIndex(
+            (item) => item.productId.toString() === productId
+        );
+
+        if (existingIndex > -1) {
+            cart.items[existingIndex].quantity += (quantity || 1);
+        } else {
+            cart.items.push({ productId, quantity: quantity || 1 });
+        }
+
+        await cart.save();
+        const items = await getPopulatedCart(req.verifiedUser.id);
+        res.json(items);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// POST /api/cart/merge — merge guest localStorage cart into DB cart on login
+app.post("/api/cart/merge", verifySignedCookie, async (req, res) => {
+    try {
+        const { items } = req.body; // array of cart items from localStorage
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            const populated = await getPopulatedCart(req.verifiedUser.id);
+            return res.json(populated);
+        }
+
+        let cart = await Cart.findOne({ userId: req.verifiedUser.id });
+        if (!cart) {
+            cart = new Cart({ userId: req.verifiedUser.id, items: [] });
+        }
+
+        for (const guestItem of items) {
+            const pid = guestItem._id || guestItem.productId;
+            const existingIndex = cart.items.findIndex(
+                (item) => item.productId.toString() === pid
+            );
+            if (existingIndex > -1) {
+                cart.items[existingIndex].quantity += (guestItem.quantity || 1);
+            } else {
+                cart.items.push({
+                    productId: pid,
+                    quantity: guestItem.quantity || 1,
+                });
+            }
+        }
+
+        await cart.save();
+        const populated = await getPopulatedCart(req.verifiedUser.id);
+        res.json(populated);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT /api/cart/:productId — update item quantity
+app.put("/api/cart/:productId", verifySignedCookie, async (req, res) => {
+    try {
+        const { quantity } = req.body;
+        const cart = await Cart.findOne({ userId: req.verifiedUser.id });
+        if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+        const itemIndex = cart.items.findIndex(
+            (item) => item.productId.toString() === req.params.productId
+        );
+
+        if (itemIndex === -1) return res.status(404).json({ message: "Item not found in cart" });
+
+        if (quantity < 1) {
+            cart.items.splice(itemIndex, 1);
+        } else {
+            cart.items[itemIndex].quantity = quantity;
+        }
+
+        await cart.save();
+        const items = await getPopulatedCart(req.verifiedUser.id);
+        res.json(items);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE /api/cart/:productId — remove single item
+app.delete("/api/cart/:productId", verifySignedCookie, async (req, res) => {
+    try {
+        const cart = await Cart.findOne({ userId: req.verifiedUser.id });
+        if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+        cart.items = cart.items.filter(
+            (item) => item.productId.toString() !== req.params.productId
+        );
+
+        await cart.save();
+        const items = await getPopulatedCart(req.verifiedUser.id);
+        res.json(items);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE /api/cart — clear entire cart
+app.delete("/api/cart", verifySignedCookie, async (req, res) => {
+    try {
+        await Cart.findOneAndDelete({ userId: req.verifiedUser.id });
+        res.json({ message: "Cart cleared" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

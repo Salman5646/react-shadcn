@@ -8,9 +8,12 @@ import { Link } from "react-router-dom"
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "./AppSidebar"
+import { verifySession } from "@/lib/cookieUtils"
+import * as cartService from "@/lib/cartService"
 
 export default function Cart() {
     const [cartItems, setCartItems] = useState([]);
+    const [user, setUser] = useState(null);
     // Calculating total using reduce
     const total = cartItems.reduce((acc, item) => {
 
@@ -18,45 +21,52 @@ export default function Cart() {
     }, 0);
 
     useEffect(() => {
-        const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-        setCartItems(savedCart);
+        verifySession().then(verified => setUser(verified));
     }, []);
-    const clearCart = () => {
-        localStorage.removeItem("cart");
+
+    useEffect(() => {
+        const loadCart = async () => {
+            const items = await cartService.getCart(user);
+            setCartItems(items);
+        };
+        loadCart();
+
+        const handler = () => loadCart();
+        window.addEventListener("cartUpdate", handler);
+        return () => window.removeEventListener("cartUpdate", handler);
+    }, [user]);
+
+    const clearCartHandler = async () => {
+        await cartService.clearCart(user);
         setCartItems([]);
     };
-    const removeItem = (indexToRemove) => {
-        const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-        const updatedCart = savedCart.filter((_, index) => index !== indexToRemove);
-        localStorage.setItem("cart", JSON.stringify(updatedCart));
-        setCartItems(updatedCart);
-        // Syncing with Home page badge
-        window.dispatchEvent(new Event("cartUpdate"));
+    const removeItem = async (indexToRemove) => {
+        const item = cartItems[indexToRemove];
+        const items = await cartService.removeFromCart(item, indexToRemove, user);
+        setCartItems(items);
     };
-    const updateQuantity = (index, delta) => {
-        const updatedCart = [...cartItems];
-        const newQuantity = (updatedCart[index].quantity || 1) + delta;
+    const updateQuantity = async (index, delta) => {
+        const item = cartItems[index];
+        const newQuantity = (item.quantity || 1) + delta;
 
         if (newQuantity < 1) {
-            removeItem(index); // Remove if quantity goes below 1
+            removeItem(index);
         } else {
-            updatedCart[index].quantity = newQuantity;
-            setCartItems(updatedCart);
-            localStorage.setItem("cart", JSON.stringify(updatedCart));
-            window.dispatchEvent(new Event("cartUpdate"));
+            const items = await cartService.updateQuantity(item, newQuantity, user);
+            setCartItems(items);
         }
     };
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset>
-                <div className="min-h-screen bg-black text-white p-6 relative">
+                <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-6 relative transition-colors duration-300">
                     {/* Navigation */}
-                    <Link to="/" className="inline-flex items-center gap-2 mb-8 text-zinc-400 hover:text-white transition-colors">
+                    <Link to="/" className="inline-flex items-center gap-2 mb-8 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
                         <ChevronLeft className="h-5 w-5" />
                         <span>Continue Shopping</span>
                     </Link>
-                    <Trash onClick={clearCart} className="absolute top-6 right-6 cursor-pointer hover:text-red-500 transition-colors" />
+                    <Trash onClick={clearCartHandler} className="absolute top-6 right-6 cursor-pointer hover:text-red-500 transition-colors" />
                     <div className="container mx-auto max-w-5xl">
                         <h2 className="text-3xl font-bold mb-8 text-center">Your Shopping Cart</h2>
 
@@ -76,39 +86,39 @@ export default function Cart() {
 
                                 ))
                             ) : (
-                                <div className="col-span-full   p-16 text-center bg-zinc-900/30">
-                                    <p className="text-zinc-500 text-lg">Your cart is currently empty.</p>
+                                <div className="col-span-full   p-16 text-center bg-gray-100 dark:bg-zinc-900/30">
+                                    <p className="text-gray-400 dark:text-zinc-500 text-lg">Your cart is currently empty.</p>
                                 </div>
                             )}
                         </div>
 
                         {/* 2. Footer Summary Section */}
                         {cartItems.length > 0 && (
-                            <div className="mt-auto border-t border-zinc-800 pt-8 pb-12">
-                                <div className="max-w-2xl mx-auto bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+                            <div className="mt-auto border-t border-gray-200 dark:border-zinc-800 pt-8 pb-12">
+                                <div className="max-w-2xl mx-auto bg-gray-50 dark:bg-zinc-900/50 rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden">
                                     <Table>
 
-                                        <TableHeader className="bg-zinc-800/50">
-                                            <TableRow className="border-zinc-800">
-                                                <TableHead className="text-zinc-300">Description</TableHead>
-                                                <TableHead className="text-zinc-300">Details</TableHead>
+                                        <TableHeader className="bg-gray-100 dark:bg-zinc-800/50">
+                                            <TableRow className="border-gray-200 dark:border-zinc-800">
+                                                <TableHead className="text-gray-600 dark:text-zinc-300">Description</TableHead>
+                                                <TableHead className="text-gray-600 dark:text-zinc-300">Details</TableHead>
                                                 <TableHead className="text-right text-zinc-300">Amount</TableHead>
                                             </TableRow>
-                                        </TableHeader>  
+                                        </TableHeader>
                                         <TableBody>
-                                            <TableRow className="border-zinc-800">
+                                            <TableRow className="border-gray-200 dark:border-zinc-800">
                                                 <TableCell className="font-medium">Items Total</TableCell>
-                                                <TableCell className="text-zinc-400">
+                                                <TableCell className="text-gray-500 dark:text-zinc-400">
                                                     {cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0)} Unit(s)
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">${total.toFixed(2)}</TableCell>
                                             </TableRow>
-                                            <TableRow className="border-zinc-800">
+                                            <TableRow className="border-gray-200 dark:border-zinc-800">
                                                 <TableCell className="font-medium">Shipping</TableCell>
-                                                <TableCell className="text-zinc-400">Standard Delivery</TableCell>
+                                                <TableCell className="text-gray-500 dark:text-zinc-400">Standard Delivery</TableCell>
                                                 <TableCell className="text-right text-green-500 font-bold uppercase">Free</TableCell>
                                             </TableRow>
-                                            <TableRow className="border-zinc-700 bg-zinc-800/20">
+                                            <TableRow className="border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800/20">
                                                 <TableCell colSpan={2} className="text-lg font-bold">Total Payable</TableCell>
                                                 <TableCell className="text-right text-lg font-bold font-mono text-white">
                                                     ${total.toFixed(2)}
@@ -116,8 +126,8 @@ export default function Cart() {
                                             </TableRow>
                                         </TableBody>
                                     </Table>
-                                    <div className="p-4 bg-zinc-900">
-                                        <Button className="w-full bg-white text-black hover:bg-zinc-200 py-6 text-lg font-bold rounded-lg shadow-xl">
+                                    <div className="p-4 bg-gray-100 dark:bg-zinc-900">
+                                        <Button className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-zinc-200 py-6 text-lg font-bold rounded-lg shadow-xl">
                                             Proceed to Payment
                                         </Button>
                                     </div>

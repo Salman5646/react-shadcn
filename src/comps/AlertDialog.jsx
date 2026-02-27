@@ -10,14 +10,15 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
+import { verifySession } from "@/lib/cookieUtils"
+import * as cartService from "@/lib/cartService"
 
 // Add 'title' to your props destructuring
 export function AlertDialog({ trigger, title, item }) {
 
-    const handleAddToCart = () => {
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
-        cart.push(item);
-        localStorage.setItem('cart', JSON.stringify(cart));
+    const handleAddToCart = async () => {
+        const user = await verifySession();
+        await cartService.addToCart(item, user);
         window.dispatchEvent(new Event("storage"));
 
         // Get current time in a readable format (e.g., 10:30 PM)

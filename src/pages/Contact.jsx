@@ -46,7 +46,7 @@ export function Contact() {
     return (
         <>
             <Navbar />
-            <div className="bg-black text-white min-h-screen py-16 px-6">
+            <div className="bg-white dark:bg-black text-black dark:text-white min-h-screen py-16 px-6 transition-colors duration-300">
                 <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
 
                     {/* Left Side: Contact Info */}
@@ -77,7 +77,7 @@ export function Contact() {
                     </div>
 
                     {/* Right Side: Contact Form Card */}
-                    <Card className="bg-zinc-900 border-zinc-800 text-white">
+                    <Card className="bg-gray-100 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
                         <CardHeader>
                             <CardTitle>Send us a Message</CardTitle>
                         </CardHeader>
@@ -91,7 +91,7 @@ export function Contact() {
                                             <FormItem>
                                                 <FormLabel>Full Name</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="John Doe" className="bg-zinc-800 border-zinc-700" {...field} />
+                                                    <Input placeholder="John Doe" className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -104,7 +104,7 @@ export function Contact() {
                                             <FormItem>
                                                 <FormLabel>Email Address</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="john@example.com" className="bg-zinc-800 border-zinc-700" {...field} />
+                                                    <Input placeholder="john@example.com" className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -119,7 +119,7 @@ export function Contact() {
                                                 <FormControl>
                                                     <Textarea
                                                         placeholder="How can we help you?"
-                                                        className="bg-zinc-800 border-zinc-700 min-h-[120px]"
+                                                        className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 min-h-[120px]"
                                                         {...field}
                                                     />
                                                 </FormControl>

@@ -15,6 +15,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { countryCityData } from "@/data/countryCities"
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { saveUser } from "@/lib/cookieUtils"
 
 export function Signup() {
     const [form, setForm] = useState({
@@ -78,7 +79,7 @@ export function Signup() {
             const data = await res.json();
 
             if (res.ok) {
-                localStorage.setItem("user", JSON.stringify(data.user));
+                saveUser(data.user);
                 toast.success("Account created successfully!");
                 navigate("/");
             } else {
@@ -92,7 +93,7 @@ export function Signup() {
     };
 
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-950">
+        <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
             <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-white hover:text-gray-300 transition-colors">
                 <ChevronLeft className="h-6 w-6" />
                 <span className="sr-only">Back to Home</span>
@@ -179,7 +180,7 @@ export function Signup() {
                                     });
                                     const data = await res.json();
                                     if (res.ok) {
-                                        localStorage.setItem("user", JSON.stringify(data.user));
+                                        saveUser(data.user);
                                         window.dispatchEvent(new Event("userChange"));
                                         if (!data.user.phone) {
                                             toast.success("Please complete your profile");

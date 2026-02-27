@@ -24,6 +24,7 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { verifySession, serverLogout } from "@/lib/cookieUtils"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -42,12 +43,10 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
     const navigate = useNavigate();
 
     useEffect(() => {
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-        if (savedUser) setUser(savedUser);
+        verifySession().then(verified => setUser(verified));
 
         const handleStorageChange = () => {
-            const current = JSON.parse(localStorage.getItem("user"));
-            setUser(current);
+            verifySession().then(verified => setUser(verified));
         };
         window.addEventListener("storage", handleStorageChange);
         window.addEventListener("userChange", handleStorageChange);
@@ -59,8 +58,8 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
 
     const handleLogout = () => {
         setLoggingOut(true);
-        setTimeout(() => {
-            localStorage.removeItem("user");
+        setTimeout(async () => {
+            await serverLogout();
             setUser(null);
             window.dispatchEvent(new Event("userChange"));
             setLoggingOut(false);

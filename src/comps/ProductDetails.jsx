@@ -10,21 +10,18 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog"
 import { Star, PackageCheck } from "lucide-react" // New Icons
-const handleAddToCart = (product) => {
-    // 1. Get existing cart from localStorage or initialize empty array
-    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+import { verifySession } from "@/lib/cookieUtils"
+import * as cartService from "@/lib/cartService"
 
-    // 2. Check if product already exists (optional but recommended)
+const handleAddToCart = async (product) => {
+    const user = await verifySession();
+    const existingCart = await cartService.getCart(user);
+
     const isItemInCart = existingCart.find((item) => item.product_name === product.product_name);
 
     if (!isItemInCart) {
-        // 3. Add the new product to the array
-        const updatedCart = [...existingCart, product];
-
-        // 4. Save the updated array back to localStorage
-        localStorage.setItem("cart", JSON.stringify(updatedCart));
+        await cartService.addToCart(product, user);
         window.dispatchEvent(new Event("storage"));
-
         alert(`${product.product_name} added to cart!`);
     } else {
         alert("Item is already in your cart.");

@@ -1,6 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { CircleUser, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
+import { verifySession, serverLogout } from "@/lib/cookieUtils";
 import { useSidebar, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator } from "@/components/ui/sidebar";
 import {
     AlertDialog,
@@ -17,14 +18,13 @@ import {
 export function AppSidebar() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-        if (savedUser) setUser(savedUser);
+        verifySession().then(verified => setUser(verified));
 
         const handleStorageChange = () => {
-            const current = JSON.parse(localStorage.getItem("user"));
-            setUser(current);
+            verifySession().then(verified => setUser(verified));
         };
         window.addEventListener("storage", handleStorageChange);
         window.addEventListener("userChange", handleStorageChange);
@@ -34,8 +34,8 @@ export function AppSidebar() {
         };
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("user");
+    const handleLogout = async () => {
+        await serverLogout();
         setUser(null);
         window.dispatchEvent(new Event("userChange"));
         navigate("/");
@@ -71,7 +71,7 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton isActive>
+                                <SidebarMenuButton isActive={location.pathname === "/"}>
                                     <span className="flex items-center gap-2"><Link to="/">🏠 {user?.role === "admin" ? "Dashboard" : "Home"}</Link></span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -102,33 +102,6 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                <SidebarSeparator />
-
-                {/* Categories Group - Hide for admins */}
-                {user?.role !== "admin" && (
-                    <>
-                        <SidebarGroup>
-                            <SidebarGroupLabel>Categories</SidebarGroupLabel>
-                            <SidebarGroupContent>
-                                <SidebarMenu>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton>✨ Electronics</SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton>💎 Jewelry</SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton>👕 Men's Clothing</SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton>👗 Women's Clothing</SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-                        <SidebarSeparator />
-                    </>
-                )}
 
                 <SidebarSeparator />
 
@@ -150,7 +123,9 @@ export function AppSidebar() {
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton>⚙️ Account Settings</SidebarMenuButton>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/account"}>
+                                            <Link to="/account">⚙️ Account Settings</Link>
+                                        </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>
                             )}
@@ -204,7 +179,7 @@ export function AccountButton() {
         <button onClick={toggleSidebar} className="fixed bottom-4 left-2 z-50">
             <CircleUser
                 size={40}
-                className="dark:bg-white dark:text-black bg-black text-white rounded-full p-2 border-gray-200"
+                className="bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-full p-2 transition-all duration-200 shadow-none"
             />
         </button>
     );

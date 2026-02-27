@@ -21,28 +21,32 @@ import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Navbar } from "../comps/Navbar"
+import { verifySession } from "@/lib/cookieUtils"
 
 export function AdminUsers() {
     const navigate = useNavigate();
-    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const [savedUser, setSavedUser] = useState(null);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Guard: only admins
+    // Guard: only admins — verify session on mount
     useEffect(() => {
-        if (!savedUser || savedUser.role !== "admin") {
-            toast.error("Access denied. Admin only.");
-            navigate("/");
-            return;
-        }
-        fetchUsers();
+        verifySession().then(verified => {
+            if (!verified || verified.role !== "admin") {
+                toast.error("Access denied. Admin only.");
+                navigate("/");
+                return;
+            }
+            setSavedUser(verified);
+            fetchUsers();
+        });
     }, []);
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
             const res = await fetch("/api/admin/users", {
-                headers: { "x-admin-id": savedUser.id },
+                credentials: "include",
             });
             const data = await res.json();
             if (res.ok) {
@@ -61,7 +65,7 @@ export function AdminUsers() {
         try {
             const res = await fetch(`/api/admin/users/${userId}`, {
                 method: "DELETE",
-                headers: { "x-admin-id": savedUser.id },
+                credentials: "include",
             });
             const data = await res.json();
             if (res.ok) {
@@ -82,8 +86,8 @@ export function AdminUsers() {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-admin-id": savedUser.id,
                 },
+                credentials: "include",
                 body: JSON.stringify({ role: newRole }),
             });
             const data = await res.json();
@@ -103,7 +107,7 @@ export function AdminUsers() {
     return (
         <>
             <Navbar />
-            <div className="p-4 md:p-8 flex-1 bg-black min-h-screen">
+            <div className="p-4 md:p-8 flex-1 bg-white dark:bg-black min-h-screen transition-colors duration-300">
                 <div className="flex items-center gap-4 mb-6">
                     <Link to="/" className="text-white hover:text-gray-300 transition-colors">
                         <ChevronLeft className="h-6 w-6" />

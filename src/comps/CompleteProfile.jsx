@@ -12,10 +12,11 @@ import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { toast } from "sonner"
 import { countryCityData } from "@/data/countryCities"
+import { saveUser, getUser } from "@/lib/cookieUtils"
 
 export function CompleteProfile() {
     const navigate = useNavigate();
-    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const savedUser = getUser();
 
     const [form, setForm] = useState({
         phone: savedUser?.phone || "",
@@ -72,7 +73,7 @@ export function CompleteProfile() {
             const data = await res.json();
 
             if (res.ok) {
-                localStorage.setItem("user", JSON.stringify(data.user));
+                saveUser(data.user);
                 window.dispatchEvent(new Event("userChange"));
                 toast.success("Profile completed successfully!");
                 navigate("/");
@@ -87,7 +88,7 @@ export function CompleteProfile() {
     };
 
     return (
-        <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-950">
+        <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
             <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-white hover:text-gray-300 transition-colors">
                 <ChevronLeft className="h-6 w-6" />
                 <span className="sr-only">Back to Home</span>
