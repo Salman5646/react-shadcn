@@ -19,15 +19,38 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { AlertDialog as AddToCartDialog } from "./AlertDialog"
-import { ProductDetails } from "./ProductDetails"
 import { cn } from "@/lib/utils"
 import { Trash2 } from "lucide-react"
+import { Link } from "react-router-dom"
+import { toast } from "sonner"
+import { verifySession } from "@/lib/cookieUtils"
+import * as cartService from "@/lib/cartService"
+
 
 // Change this line to explicitly pull out your custom props
 export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease, isAdmin, onDelete }) {
     const isCart = behaviour === "cart";
     const showQuantity = behaviour === "cart" || behaviour === "quantity";
+
+    const handleAddToCart = async (e) => {
+        e.stopPropagation();
+        const user = await verifySession();
+        await cartService.addToCart(item, user);
+        window.dispatchEvent(new Event("storage"));
+
+        const currentTime = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        toast.success(`${item.product_name} added successfully`, {
+            description: `Added on ${new Date().toLocaleDateString()} at ${currentTime}`,
+            action: {
+                label: "Close",
+                onClick: () => { },
+            },
+        });
+    };
 
     const Content = (
         <div className={cn(
@@ -43,7 +66,7 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                     alt={item.product_name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute top-1 right-1 md:top-2 md:right-2 z-20">
+                <div className="absolute top-1 right-1 md:top-2 md:right-2 z-20 flex flex-col items-end gap-1">
                     <Badge className="text-[9px] md:text-[10px] uppercase tracking-wider font-semibold shadow-sm backdrop-blur-md bg-white/90 text-black dark:bg-black/90 dark:text-white border-0 px-1.5 py-0.5" variant="secondary">
                         {item.category}
                     </Badge>
@@ -69,14 +92,14 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
     );
 
     return (
-        <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col overflow-hidden group transition-all duration-300 hover:shadow-xl border-border/50 bg-card/50 backdrop-blur-sm">
+        <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col overflow-hidden group transition-all duration-300 hover:shadow-xl border-gray-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
 
 
 
-            {/* Now we always wrap with ProductDetails so it's clickable everywhere */}
-            <ProductDetails item={item}>
+            {/* Now we always wrap with Link so it's clickable everywhere */}
+            <Link to={`/product/${item._id}`}>
                 {Content}
-            </ProductDetails>
+            </Link>
 
 
             <CardFooter className="p-2 pt-0 md:p-4 md:pt-0 mt-auto">
@@ -141,11 +164,12 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                         </AlertDialogContent>
                     </UIAlertDialog>
                 ) : (
-                    <AddToCartDialog
-                        title={item.product_name}
-                        item={item}
-                        trigger={<Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm h-8 md:h-10 text-xs md:text-sm rounded-lg transition-transform active:scale-95 duration-200">Add to Cart</Button>}
-                    />
+                    <Button
+                        onClick={handleAddToCart}
+                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm h-8 md:h-10 text-xs md:text-sm rounded-lg transition-transform active:scale-95 duration-200"
+                    >
+                        Add to Cart
+                    </Button>
                 )}
             </CardFooter>
         </Card>

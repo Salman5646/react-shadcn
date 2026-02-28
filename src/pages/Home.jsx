@@ -25,6 +25,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { verifySession } from "@/lib/cookieUtils"
 import * as cartService from "@/lib/cartService"
 
@@ -142,7 +148,6 @@ export function Home() {
                 setIsLoading(false);
             })
             .catch((err) => {
-                console.error("API Error:", err);
                 setIsLoading(false);
             });
     }, []);
@@ -247,34 +252,51 @@ export function Home() {
                 />
 
                 <main className="flex-1 p-4 md:p-6 lg:p-8 relative">
-                    {/* Product Label Tabs */}
-                    <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        {productTabs.map(tab => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setActiveTab(tab.key)}
-                                className={cn(
-                                    "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap transition-all duration-200",
-                                    activeTab === tab.key
-                                        ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                                )}
-                            >
-                                {tab.label}
-                            </button>
-                        ))}
+                    {/* Header Row */}
+                    <div className="flex items-center justify-between gap-2 mb-6">
+                        <TooltipProvider>
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1">
+                                {productTabs.map(tab => (
+                                    <Tooltip key={tab.key}>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={() => setActiveTab(tab.key)}
+                                                className={cn(
+                                                    "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium whitespace-nowrap transition-all duration-200",
+                                                    activeTab === tab.key
+                                                        ? "bg-black text-white dark:bg-white dark:text-black shadow-sm"
+                                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                                                )}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="text-[10px] font-bold">
+                                            <p>
+                                                {tab.key === "All" && "Browse our entire curated collection"}
+                                                {tab.key === "New" && "Discover fresh drops from the last 7 days"}
+                                                {tab.key === "Hot" && "Trending items with elite 4+ star ratings"}
+                                                {tab.key === "Sale" && "Exclusive deals on premium picks under $50"}
+                                            </p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                ))}
+                            </div>
+                        </TooltipProvider>
                         {/* Filter Button */}
-                        <button
-                            onClick={() => setFilterOpen(!filterOpen)}
-                            className="relative ml-auto flex-shrink-0 bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-full p-2 transition-all duration-200 cursor-pointer"
-                        >
-                            <ListFilter size={20} />
-                            {activeFilterCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-                                    {activeFilterCount}
-                                </span>
-                            )}
-                        </button>
+                        <div className="pb-2 flex-shrink-0">
+                            <button
+                                onClick={() => setFilterOpen(!filterOpen)}
+                                className="relative bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-full p-2 transition-all duration-200 cursor-pointer"
+                            >
+                                <ListFilter size={20} />
+                                {activeFilterCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                                        {activeFilterCount}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
                     </div>
                     <div className="flex flex-wrap justify-center -mx-2 md:-mx-3">
                         {isLoading ? (

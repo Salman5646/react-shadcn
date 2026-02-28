@@ -15,6 +15,7 @@ import { Signup } from "./comps/Signup";
 import { CompleteProfile } from "./comps/CompleteProfile";
 import { AdminUsers } from "./pages/AdminUsers";
 import { AccountSettings } from "./pages/AccountSettings";
+import ProductPage from "./pages/ProductPage";
 export function App() {
   return (
     <>
@@ -28,8 +29,41 @@ export function App() {
         <Route path="/complete-profile" element={<CompleteProfile />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/account" element={<AccountSettings />} />
+        <Route path="/product/:id" element={<ProductPage />} />
       </Routes>
-      <Toaster />
+      <Toaster
+        richColors
+        closeButton
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.1)',
+            fontSize: '14px',
+            fontWeight: '600',
+            fontFamily: 'inherit',
+          },
+          className: "dark:!bg-zinc-900/80 dark:!border-zinc-800 dark:!text-white",
+          success: {
+            style: {
+              borderLeft: '4px solid #22c55e',
+            }
+          },
+          error: {
+            style: {
+              borderLeft: '4px solid #ef4444',
+            }
+          },
+          info: {
+            style: {
+              borderLeft: '4px solid #3b82f6',
+            }
+          }
+        }}
+      />
     </>
   )
 }

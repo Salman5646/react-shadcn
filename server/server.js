@@ -90,6 +90,86 @@ app.delete("/api/products/:id", async (req, res) => {
     }
 });
 
+// POST append a review to a product
+app.post("/api/products/:id/reviews", verifySignedCookie, async (req, res) => {
+    try {
+        const { rating, comment } = req.body;
+        const productId = req.params.id;
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: "Rating must be between 1 and 5." });
+        }
+        if (!comment || comment.trim() === "") {
+            return res.status(400).json({ message: "Comment is required." });
+        }
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        if (!req.verifiedUser || !req.verifiedUser.id) {
+            return res.status(401).json({ message: "Invalid user session: missing ID" });
+        }
+
+        const userIdString = req.verifiedUser.id.toString();
+        const mongoUserId = new mongoose.Types.ObjectId(userIdString);
+
+
+        // Check if user already reviewed this product
+        const existingReviewIndex = product.reviews.findIndex(
+            (r) => r.userId && r.userId.toString() === userIdString
+        );
+
+        if (existingReviewIndex > -1) {
+            // Use Mongoose subdocument set() for explicit change tracking
+            product.reviews[existingReviewIndex].set({
+                rating: Number(rating),
+                comment: comment,
+                createdAt: new Date()
+            });
+        } else {
+            // Add new review using formal push to ensure casting
+            product.reviews.push({
+                userId: mongoUserId,
+                userName: req.verifiedUser.name,
+                rating: Number(rating),
+                comment: comment,
+                createdAt: new Date()
+            });
+        }
+
+        // Recalculate average rating and count based on the updated reviews array
+        const numReviews = product.reviews.length;
+        const totalRating = product.reviews.reduce((sum, item) => sum + item.rating, 0);
+
+        product.rating = {
+            rate: Number((totalRating / (numReviews || 1)).toFixed(1)),
+            count: numReviews
+        };
+
+        // Explicitly mark all modified paths to guarantee Mongoose save picks them up
+        product.markModified('reviews');
+        product.markModified('rating');
+
+        console.log("Saving product to DB...");
+        // Use a more direct update to be 100% sure it hits the DB
+        const savedProduct = await product.save();
+
+        // Final sanity check
+        const checkProduct = await Product.findById(productId);
+
+        res.status(existingReviewIndex > -1 ? 200 : 201).json({
+            message: existingReviewIndex > -1 ? "Review updated successfully" : "Review added successfully",
+            product: checkProduct
+        });
+
+    } catch (err) {
+        console.error("Critical review storage error:", err);
+        res.status(500).json({ message: "Database save failed: " + err.message });
+    }
+});
+
 
 
 // ── User Routes ──
@@ -547,6 +627,46 @@ app.delete("/api/cart", verifySignedCookie, async (req, res) => {
     try {
         await Cart.findOneAndDelete({ userId: req.verifiedUser.id });
         res.json({ message: "Cart cleared" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE /api/products/:id/reviews — remove user's review
+app.delete("/api/products/:id/reviews", verifySignedCookie, async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const userId = req.verifiedUser.id;
+
+        const product = await Product.findById(productId);
+        if (!product) return res.status(404).json({ message: "Product not found" });
+
+        const reviewIndex = product.reviews.findIndex(
+            (r) => r.userId && r.userId.toString() === userId.toString()
+        );
+
+        if (reviewIndex === -1) {
+            return res.status(404).json({ message: "Review not found" });
+        }
+
+        // Remove the review
+        product.reviews.splice(reviewIndex, 1);
+
+        // Recalculate average rating and count
+        const numReviews = product.reviews.length;
+        const totalRating = product.reviews.reduce((sum, item) => sum + item.rating, 0);
+
+        product.rating = {
+            rate: numReviews > 0 ? Number((totalRating / numReviews).toFixed(1)) : 0,
+            count: numReviews
+        };
+
+        product.markModified('reviews');
+        product.markModified('rating');
+
+        await product.save();
+        res.json({ message: "Review deleted successfully", product });
+
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

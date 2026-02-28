@@ -10,7 +10,17 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "./AppSidebar"
 import { verifySession } from "@/lib/cookieUtils"
 import * as cartService from "@/lib/cartService"
-
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 export default function Cart() {
     const [cartItems, setCartItems] = useState([]);
     const [user, setUser] = useState(null);
@@ -19,6 +29,15 @@ export default function Cart() {
 
         return acc + (item.price * (item.quantity || 1));
     }, 0);
+
+    const getProductLabels = (product) => {
+        const labels = [];
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        if (product.createdAt && new Date(product.createdAt) > sevenDaysAgo) labels.push("New");
+        if (product.rating?.rate >= 4) labels.push("Hot");
+        if (product.price < 50) labels.push("Sale");
+        return labels;
+    };
 
     useEffect(() => {
         verifySession().then(verified => setUser(verified));
@@ -60,13 +79,31 @@ export default function Cart() {
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset>
-                <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-6 relative transition-colors duration-300">
+                <div className="min-h-screen bg-white dark:bg-slate-900 text-black dark:text-white p-6 relative transition-colors duration-300">
                     {/* Navigation */}
                     <Link to="/" className="inline-flex items-center gap-2 mb-8 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
                         <ChevronLeft className="h-5 w-5" />
                         <span>Continue Shopping</span>
                     </Link>
-                    <Trash onClick={clearCartHandler} className="absolute top-6 right-6 cursor-pointer hover:text-red-500 transition-colors" />
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Trash className="absolute top-6 right-6 cursor-pointer hover:text-red-500 transition-colors" />
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-zinc-100 dark:bg-zinc-900 text-black dark:text-white border-zinc-200 dark:border-zinc-800">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Clear Cart?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+                                    Are you sure you want to remove all items from your cart?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-zinc-200 dark:bg-zinc-800 border-none text-black dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700">Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={clearCartHandler} className="bg-red-600 hover:bg-red-700 text-white">
+                                    Clear Cart
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <div className="container mx-auto max-w-5xl">
                         <h2 className="text-3xl font-bold mb-8 text-center">Your Shopping Cart</h2>
 
@@ -79,7 +116,6 @@ export default function Cart() {
                                         item={product}
                                         behaviour="cart"
                                         onRemove={() => removeItem(index)}
-                                        // Pass these props to the Card
                                         onIncrease={() => updateQuantity(index, 1)}
                                         onDecrease={() => updateQuantity(index, -1)}
                                     />
@@ -120,7 +156,7 @@ export default function Cart() {
                                             </TableRow>
                                             <TableRow className="border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800/20">
                                                 <TableCell colSpan={2} className="text-lg font-bold">Total Payable</TableCell>
-                                                <TableCell className="text-right text-lg font-bold font-mono text-white">
+                                                <TableCell className="text-right text-black dark:text-white font-bold font-mono">
                                                     ${total.toFixed(2)}
                                                 </TableCell>
                                             </TableRow>
