@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema(
     address: { type: String, trim: true },
     city: { type: String, trim: true },
     country: { type: String, default: "India", trim: true },
+    otp: { type: String },
+    otpExpiry: { type: Date },
   },
   { timestamps: true }
 );

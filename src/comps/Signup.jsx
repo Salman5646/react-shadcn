@@ -104,7 +104,7 @@ export function Signup() {
                     <div className="flex justify-center">
                         <Tabs defaultValue="signup" className="w-full">
                             <TabsList className="w-full">
-                                <TabsTrigger value="login" className="flex-1"><Link to="/login">Log In</Link></TabsTrigger>
+                                <TabsTrigger value="login" className="flex-1" asChild><Link to="/login">Log In</Link></TabsTrigger>
                                 <TabsTrigger value="signup" className="flex-1" asChild><Link to="/signup">Sign Up</Link></TabsTrigger>
                             </TabsList>
                         </Tabs>

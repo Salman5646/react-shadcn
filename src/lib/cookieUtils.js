@@ -31,7 +31,7 @@ export async function verifySession() {
         if (res.ok) {
             const data = await res.json();
             return data.user;
-        }
+        }   
         // Session invalid — clear the client-side cookie
         Cookies.remove(USER_COOKIE_KEY);
         return null;

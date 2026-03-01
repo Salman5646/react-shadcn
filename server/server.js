@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 import cookieParser from "cookie-parser";
 import Product from "./models/Product.js";
 import User from "./models/User.js";
@@ -89,7 +90,7 @@ app.delete("/api/products/:id", async (req, res) => {
 });
 
 // POST append a review to a product
-app.post("/api/products/:id/reviews", verifySignedCookie, async (req, res) => {
+app.post("/api/products/:id/reviews", verifyToken, async (req, res) => {
     try {
         const { rating, comment } = req.body;
         const productId = req.params.id;
@@ -402,7 +403,7 @@ function verifyToken(req, res, next) {
 // ── Admin Routes ──
 
 // GET all users (admin only)
-app.get("/api/admin/users", verifySignedCookie, async (req, res) => {
+app.get("/api/admin/users", verifyToken, async (req, res) => {
     try {
         const admin = req.verifiedUser;
         if (!admin || admin.role !== "admin") {
@@ -417,7 +418,7 @@ app.get("/api/admin/users", verifySignedCookie, async (req, res) => {
 });
 
 // DELETE a user (admin only)
-app.delete("/api/admin/users/:id", verifySignedCookie, async (req, res) => {
+app.delete("/api/admin/users/:id", verifyToken, async (req, res) => {
     try {
         const admin = req.verifiedUser;
         if (!admin || admin.role !== "admin") {
@@ -438,7 +439,7 @@ app.delete("/api/admin/users/:id", verifySignedCookie, async (req, res) => {
 });
 
 // PUT update user role (admin only)
-app.put("/api/admin/users/:id/role", verifySignedCookie, async (req, res) => {
+app.put("/api/admin/users/:id/role", verifyToken, async (req, res) => {
     try {
         const admin = req.verifiedUser;
         if (!admin || admin.role !== "admin") {
@@ -486,7 +487,7 @@ async function getPopulatedCart(userId) {
 }
 
 // GET /api/cart — fetch user's cart
-app.get("/api/cart", verifySignedCookie, async (req, res) => {
+app.get("/api/cart", verifyToken, async (req, res) => {
     try {
         const items = await getPopulatedCart(req.verifiedUser.id);
         res.json(items);
@@ -496,7 +497,7 @@ app.get("/api/cart", verifySignedCookie, async (req, res) => {
 });
 
 // POST /api/cart — add item to cart (or increment quantity if exists)
-app.post("/api/cart", verifySignedCookie, async (req, res) => {
+app.post("/api/cart", verifyToken, async (req, res) => {
     try {
         const { productId, quantity } = req.body;
         let cart = await Cart.findOne({ userId: req.verifiedUser.id });
@@ -524,7 +525,7 @@ app.post("/api/cart", verifySignedCookie, async (req, res) => {
 });
 
 // POST /api/cart/merge — merge guest localStorage cart into DB cart on login
-app.post("/api/cart/merge", verifySignedCookie, async (req, res) => {
+app.post("/api/cart/merge", verifyToken, async (req, res) => {
     try {
         const { items } = req.body; // array of cart items from localStorage
         if (!items || !Array.isArray(items) || items.length === 0) {
@@ -561,7 +562,7 @@ app.post("/api/cart/merge", verifySignedCookie, async (req, res) => {
 });
 
 // PUT /api/cart/:productId — update item quantity
-app.put("/api/cart/:productId", verifySignedCookie, async (req, res) => {
+app.put("/api/cart/:productId", verifyToken, async (req, res) => {
     try {
         const { quantity } = req.body;
         const cart = await Cart.findOne({ userId: req.verifiedUser.id });
@@ -588,7 +589,7 @@ app.put("/api/cart/:productId", verifySignedCookie, async (req, res) => {
 });
 
 // DELETE /api/cart/:productId — remove single item
-app.delete("/api/cart/:productId", verifySignedCookie, async (req, res) => {
+app.delete("/api/cart/:productId", verifyToken, async (req, res) => {
     try {
         const cart = await Cart.findOne({ userId: req.verifiedUser.id });
         if (!cart) return res.status(404).json({ message: "Cart not found" });
@@ -606,7 +607,7 @@ app.delete("/api/cart/:productId", verifySignedCookie, async (req, res) => {
 });
 
 // DELETE /api/cart — clear entire cart
-app.delete("/api/cart", verifySignedCookie, async (req, res) => {
+app.delete("/api/cart", verifyToken, async (req, res) => {
     try {
         await Cart.findOneAndDelete({ userId: req.verifiedUser.id });
         res.json({ message: "Cart cleared" });
@@ -616,7 +617,7 @@ app.delete("/api/cart", verifySignedCookie, async (req, res) => {
 });
 
 // DELETE /api/products/:id/reviews — remove user's review
-app.delete("/api/products/:id/reviews", verifySignedCookie, async (req, res) => {
+app.delete("/api/products/:id/reviews", verifyToken, async (req, res) => {
     try {
         const productId = req.params.id;
         const userId = req.verifiedUser.id;
@@ -655,7 +656,138 @@ app.delete("/api/products/:id/reviews", verifySignedCookie, async (req, res) => 
     }
 });
 
+// ── Forgot Password (OTP via Email) ──
+
+function createTransporter() {
+    return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+}
+
+// POST /api/forgot-password — generate and email a 6-digit OTP
+app.post("/api/forgot-password", async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: "Email is required" });
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "No account found with this email" });
+
+        if (user.googleId && !user.password) {
+            return res.status(400).json({ message: "This account uses Google Sign-In. Password reset is not available." });
+        }
+
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // Hash OTP before storing
+        const hashedOtp = await bcrypt.hash(otp, 10);
+        user.otp = hashedOtp;
+        user.otpExpiry = otpExpiry;
+        await user.save();
+
+        // Send email
+        const transporter = createTransporter();
+        await transporter.sendMail({
+            from: `"Shopr" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: "Your Shopr Password Reset OTP",
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px;">
+                    <h2 style="color: #111827; margin-bottom: 8px;">Reset Your Password</h2>
+                    <p style="color: #6b7280;">Use the OTP below to reset your password. It expires in <strong>10 minutes</strong>.</p>
+                    <div style="text-align: center; margin: 24px 0;">
+                        <span style="font-size: 36px; font-weight: bold; letter-spacing: 10px; color: #111827;">${otp}</span>
+                    </div>
+                    <p style="color: #9ca3af; font-size: 13px;">If you didn't request this, you can safely ignore this email.</p>
+                </div>
+            `,
+        });
+
+        res.json({ message: "OTP sent to your email" });
+    } catch (err) {
+        console.error("Forgot password error:", err.message);
+        res.status(500).json({ message: "Failed to send OTP. Try again." });
+    }
+});
+
+// POST /api/verify-otp — verify the OTP
+app.post("/api/verify-otp", async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
+
+        const user = await User.findOne({ email });
+        if (!user || !user.otp || !user.otpExpiry) {
+            return res.status(400).json({ message: "No OTP request found. Please request a new one." });
+        }
+
+        if (new Date() > user.otpExpiry) {
+            user.otp = undefined;
+            user.otpExpiry = undefined;
+            await user.save();
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        }
+
+        const isMatch = await bcrypt.compare(otp, user.otp);
+        if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });
+
+        res.json({ message: "OTP verified" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// POST /api/reset-password — set new password after OTP verified
+app.post("/api/reset-password", async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: "Email, OTP and new password are required" });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user || !user.otp || !user.otpExpiry) {
+            return res.status(400).json({ message: "No OTP request found. Please start over." });
+        }
+
+        if (new Date() > user.otpExpiry) {
+            user.otp = undefined;
+            user.otpExpiry = undefined;
+            await user.save();
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+        }
+
+        const isMatch = await bcrypt.compare(otp, user.otp);
+        if (!isMatch) return res.status(400).json({ message: "Invalid OTP" });
+
+        // Hash and save new password, clear OTP fields
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.otp = undefined;
+        user.otpExpiry = undefined;
+        await user.save();
+
+        // Issue a fresh JWT so user is immediately logged in
+        const userData = JSON.parse(JSON.stringify({
+            id: user._id, name: user.name, email: user.email, role: user.role,
+            phone: user.phone, address: user.address, city: user.city, country: user.country,
+        }));
+        setTokenCookie(res, userData);
+
+        res.json({ message: "Password reset successful", user: userData });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // ── Connect to MongoDB & Start ──
+
 mongoose
     .connect(process.env.MONGO_URI)
     .then(() => {
