@@ -2,8 +2,8 @@ import Cookies from "js-cookie";
 
 const USER_COOKIE_KEY = "user";
 
-/** Save user object to a regular cookie for immediate UI use (7-day expiry).
- *  The tamper-proof httpOnly signature cookie (user_sig) is set by the server. */
+/** Save user object to a readable cookie for UI use (7-day expiry).
+ *  The server issues a separate httpOnly `token` JWT cookie for auth. */
 export function saveUser(userObj) {
     Cookies.set(USER_COOKIE_KEY, JSON.stringify(userObj), { expires: 7, sameSite: "Lax" });
 }
@@ -18,13 +18,13 @@ export function getUser() {
     }
 }
 
-/** Remove the client-side user cookie (server clears httpOnly sig via /api/logout) */
+/** Remove the client-side user cookie (server clears httpOnly JWT via /api/logout) */
 export function removeUser() {
     Cookies.remove(USER_COOKIE_KEY);
 }
 
-/** Call /api/me to verify the session against the httpOnly signature cookie.
- *  Returns the verified user object, or null if session is invalid/tampered. */
+/** Call /api/me to verify the JWT token cookie on the server.
+ *  Returns the verified user object, or null if session is invalid/expired. */
 export async function verifySession() {
     try {
         const res = await fetch("/api/me", { credentials: "include" });
@@ -40,7 +40,7 @@ export async function verifySession() {
     }
 }
 
-/** Call /api/logout to clear httpOnly cookies on the server */
+/** Call /api/logout to clear the httpOnly JWT token cookie on the server */
 export async function serverLogout() {
     try {
         await fetch("/api/logout", { method: "POST", credentials: "include" });

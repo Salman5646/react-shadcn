@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import Product from "./models/Product.js";
 import User from "./models/User.js";
@@ -13,21 +13,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const COOKIE_SECRET = process.env.COOKIE_SECRET || "default-dev-secret-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "default-dev-secret-change-in-production";
 
-// ── Cookie Signing Helpers ──
-function signUserData(userData) {
-    const payload = JSON.stringify(userData);
-    return crypto.createHmac("sha256", COOKIE_SECRET).update(payload).digest("hex");
+// ── JWT Helpers ──
+const TOKEN_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax", maxAge: 7 * 24 * 60 * 60 * 1000 };
+
+function generateToken(userData) {
+    return jwt.sign(userData, JWT_SECRET, { expiresIn: "7d" });
 }
 
-function verifyUserData(userData, signature) {
-    const expected = signUserData(userData);
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+function setTokenCookie(res, userData) {
+    const token = generateToken(userData);
+    res.cookie("token", token, TOKEN_COOKIE_OPTIONS);
 }
-
-// ── Cookie Config ──
-const COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax", maxAge: 7 * 24 * 60 * 60 * 1000 };
 
 // ── Middleware ──
 app.use(cors({ credentials: true }));
@@ -206,8 +204,7 @@ app.post("/api/register", async (req, res) => {
             city: user.city,
             country: user.country,
         }));
-        const signature = signUserData(userData);
-        res.cookie("user_sig", signature, COOKIE_OPTIONS);
+        setTokenCookie(res, userData);
         res.status(201).json({
             message: "Account created successfully",
             user: userData,
@@ -245,8 +242,7 @@ app.post("/api/login", async (req, res) => {
             city: user.city,
             country: user.country,
         }));
-        const signature = signUserData(userData);
-        res.cookie("user_sig", signature, COOKIE_OPTIONS);
+        setTokenCookie(res, userData);
         res.json({
             message: "Login successful",
             user: userData,
@@ -304,8 +300,7 @@ app.post("/api/google-auth", async (req, res) => {
             city: user.city,
             country: user.country,
         }));
-        const signature = signUserData(userData);
-        res.cookie("user_sig", signature, COOKIE_OPTIONS);
+        setTokenCookie(res, userData);
         res.json({
             message: "Login successful",
             user: userData,
@@ -352,8 +347,7 @@ app.put("/api/update-profile", async (req, res) => {
             city: user.city,
             country: user.country,
         }));
-        const signature = signUserData(userData);
-        res.cookie("user_sig", signature, COOKIE_OPTIONS);
+        setTokenCookie(res, userData);
         res.json({
             message: "Profile updated successfully",
             user: userData,
@@ -365,54 +359,43 @@ app.put("/api/update-profile", async (req, res) => {
 
 // ── Session Verification ──
 
-// GET /api/me — verify the user cookie against the httpOnly signature
+// GET /api/me — verify the JWT token cookie
 app.get("/api/me", (req, res) => {
     try {
-        const userCookie = req.cookies.user;
-        const sigCookie = req.cookies.user_sig;
-        if (!userCookie || !sigCookie) {
+        const token = req.cookies.token;
+        if (!token) {
             return res.status(401).json({ message: "Not logged in" });
         }
-        const userData = JSON.parse(userCookie);
-        if (!verifyUserData(userData, sigCookie)) {
-            // Cookie was tampered with — clear everything
-            res.clearCookie("user");
-            res.clearCookie("user_sig");
-            return res.status(403).json({ message: "Session invalid: cookie was tampered with" });
-        }
-        res.json({ user: userData });
+        const userData = jwt.verify(token, JWT_SECRET);
+        // Strip JWT internal fields before sending to client
+        const { iat, exp, ...user } = userData;
+        res.json({ user });
     } catch (err) {
-        res.clearCookie("user");
-        res.clearCookie("user_sig");
+        res.clearCookie("token");
         return res.status(403).json({ message: "Session invalid" });
     }
 });
 
-// POST /api/logout — clear httpOnly cookies
+// POST /api/logout — clear JWT token cookie
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("user");
-    res.clearCookie("user_sig");
+    res.clearCookie("token");
     res.json({ message: "Logged out successfully" });
 });
 
-// ── Admin Middleware (verify httpOnly signed cookie) ──
-function verifySignedCookie(req, res, next) {
+// ── Auth Middleware (verify JWT token cookie) ──
+function verifyToken(req, res, next) {
     try {
-        const userCookie = req.cookies.user;
-        const sigCookie = req.cookies.user_sig;
-        if (!userCookie || !sigCookie) {
+        const token = req.cookies.token;
+        if (!token) {
             return res.status(401).json({ message: "Unauthorized: not logged in" });
         }
-        const userData = JSON.parse(userCookie);
-        if (!verifyUserData(userData, sigCookie)) {
-            res.clearCookie("user");
-            res.clearCookie("user_sig");
-            return res.status(403).json({ message: "Forbidden: cookie was tampered with" });
-        }
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { iat, exp, ...userData } = decoded;
         req.verifiedUser = userData;
         next();
     } catch (err) {
-        return res.status(403).json({ message: "Forbidden: invalid cookie data" });
+        res.clearCookie("token");
+        return res.status(403).json({ message: "Forbidden: invalid or expired token" });
     }
 }
 
