@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tooltip"
 import { verifySession } from "@/lib/cookieUtils"
 import * as cartService from "@/lib/cartService"
+import * as wishlistService from "@/lib/wishlistService"
 
 export function Home() {
     const [orders, setOrders] = useState([]);
@@ -54,6 +55,7 @@ export function Home() {
         category: "",
         product_image: "",
     });
+    const [wishlistItems, setWishlistItems] = useState([]);
 
     // Extract unique categories from products
     const categories = ["All", ...new Set(orders.map(p => p.category).filter(Boolean))];
@@ -119,16 +121,34 @@ export function Home() {
             const items = await cartService.getCart(user);
             setCartItems(items);
         };
+        const updateWishlist = async () => {
+            const items = await wishlistService.getWishlist(user);
+            setWishlistItems(items);
+        };
 
         updateCart();
-        const handler = () => updateCart();
-        window.addEventListener("cartUpdate", handler);
-        window.addEventListener("storage", handler);
+        updateWishlist();
+
+        const cartHandler = () => updateCart();
+        const wishlistHandler = () => updateWishlist();
+
+        window.addEventListener("cartUpdate", cartHandler);
+        window.addEventListener("wishlistUpdate", wishlistHandler);
+        window.addEventListener("storage", cartHandler);
+        window.addEventListener("storage", wishlistHandler);
         return () => {
-            window.removeEventListener("cartUpdate", handler);
-            window.removeEventListener("storage", handler);
+            window.removeEventListener("cartUpdate", cartHandler);
+            window.removeEventListener("wishlistUpdate", wishlistHandler);
+            window.removeEventListener("storage", cartHandler);
+            window.removeEventListener("storage", wishlistHandler);
         };
     }, [user]);
+
+    const handleToggleWishlist = async (product) => {
+        const isInWishlist = wishlistItems.some(item => (item._id || item.productId) === product._id);
+        const updated = await wishlistService.toggleWishlist(product, user, isInWishlist);
+        if (updated) setWishlistItems(updated);
+    };
 
     const toggleDarkMode = () => setDarkMode(!darkMode);
     const initialSearch = searchParams ? searchParams.get("q") : "";
@@ -319,6 +339,8 @@ export function Home() {
                                             variant="default"
                                             isAdmin={user?.role === "admin"}
                                             onDelete={() => handleDeleteProduct(product._id, product.product_name)}
+                                            onToggleWishlist={handleToggleWishlist}
+                                            isWishlisted={wishlistItems.some(item => (item._id || item.productId) === product._id)}
                                         />
                                     </div>
                                 );

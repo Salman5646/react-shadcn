@@ -16,6 +16,8 @@ import { CompleteProfile } from "./comps/CompleteProfile";
 import { AdminUsers } from "./pages/AdminUsers";
 import { AccountSettings } from "./pages/AccountSettings";
 import ProductPage from "./pages/ProductPage";
+import { ForgotPassword } from "./pages/ForgotPassword";
+import Wishlist from "./pages/Wishlist";
 export function App() {
   return (
     <>
@@ -30,6 +32,8 @@ export function App() {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/account" element={<AccountSettings />} />
         <Route path="/product/:id" element={<ProductPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/wishlist" element={<Wishlist />} />
       </Routes>
       <Toaster
         richColors

@@ -20,7 +20,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-import { Trash2 } from "lucide-react"
+import { Trash2, Heart } from "lucide-react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { verifySession } from "@/lib/cookieUtils"
@@ -28,7 +28,7 @@ import * as cartService from "@/lib/cartService"
 
 
 // Change this line to explicitly pull out your custom props
-export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease, isAdmin, onDelete }) {
+export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease, isAdmin, onDelete, onToggleWishlist, isWishlisted }) {
     const isCart = behaviour === "cart";
     const showQuantity = behaviour === "cart" || behaviour === "quantity";
 
@@ -71,6 +71,27 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                         {item.category}
                     </Badge>
                 </div>
+                {!isCart && !isAdmin && onToggleWishlist && (
+                    <div className="absolute top-1 left-1 md:top-2 md:left-2 z-20">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                onToggleWishlist(item);
+                            }}
+                            className={cn(
+                                "h-7 w-7 md:h-8 md:w-8 rounded-full shadow-sm backdrop-blur-md transition-all active:scale-90",
+                                isWishlisted
+                                    ? "bg-red-500/90 text-white hover:bg-red-500"
+                                    : "bg-white/80 dark:bg-black/50 text-slate-600 dark:text-white hover:bg-white dark:hover:bg-black/70"
+                            )}
+                        >
+                            <Heart className={cn("h-3.5 w-3.5 md:h-4 md:w-4", isWishlisted && "fill-current")} />
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <CardHeader className="p-2 md:p-4 space-y-1 md:space-y-2 flex-1">

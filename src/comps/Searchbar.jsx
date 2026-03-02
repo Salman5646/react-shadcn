@@ -10,7 +10,7 @@ export function Searchbar({ searchTerm, setSearchTerm, resultCount }) {
     const { open } = useSidebar();
 
     return (
-        <InputGroup className={`max-w-56 ${open ? "md:max-w-md" : "md:max-w-xl"} bg-muted/40 border-border`}>
+        <InputGroup className={`max-w-56 ${open ? "md:max-w-md" : "md:max-w-xl"} bg-muted/40 border-border dark:border-white/20`}>
             <InputGroupInput
                 placeholder="Search..."
                 value={searchTerm}

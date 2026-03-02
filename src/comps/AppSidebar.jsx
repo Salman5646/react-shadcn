@@ -92,8 +92,10 @@ export function AppSidebar() {
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton>
-                                            <span className="flex items-center gap-2">❤️ Wishlist</span>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/wishlist"}>
+                                            <Link to="/wishlist" className="flex items-center gap-2">
+                                                <span>❤️ Wishlist</span>
+                                            </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>

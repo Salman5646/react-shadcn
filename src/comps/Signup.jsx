@@ -94,7 +94,7 @@ export function Signup() {
 
     return (
         <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-            <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-white hover:text-gray-300 transition-colors">
+            <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-foreground hover:text-muted-foreground transition-colors">
                 <ChevronLeft className="h-6 w-6" />
                 <span className="sr-only">Back to Home</span>
             </Link>
@@ -104,8 +104,8 @@ export function Signup() {
                     <div className="flex justify-center">
                         <Tabs defaultValue="signup" className="w-full">
                             <TabsList className="w-full">
-                                <TabsTrigger value="login" className="flex-1" asChild><Link to="/login">Log In</Link></TabsTrigger>
-                                <TabsTrigger value="signup" className="flex-1" asChild><Link to="/signup">Sign Up</Link></TabsTrigger>
+                                <TabsTrigger value="login" className="flex-1" onClick={() => navigate("/login")}>Log In</TabsTrigger>
+                                <TabsTrigger value="signup" className="flex-1">Sign Up</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>

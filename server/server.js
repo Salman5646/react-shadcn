@@ -365,7 +365,7 @@ app.get("/api/me", (req, res) => {
     try {
         const token = req.cookies.token;
         if (!token) {
-            return res.status(401).json({ message: "Not logged in" });
+            return res.json({ user: null });
         }
         const userData = jwt.verify(token, JWT_SECRET);
         // Strip JWT internal fields before sending to client
@@ -373,7 +373,7 @@ app.get("/api/me", (req, res) => {
         res.json({ user });
     } catch (err) {
         res.clearCookie("token");
-        return res.status(403).json({ message: "Session invalid" });
+        return res.json({ user: null });
     }
 });
 
@@ -399,6 +399,67 @@ function verifyToken(req, res, next) {
         return res.status(403).json({ message: "Forbidden: invalid or expired token" });
     }
 }
+
+// ── Wishlist Routes (authenticated users only) ──
+
+// GET /api/wishlist — fetch user's wishlist
+app.get("/api/wishlist", verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.verifiedUser.id).populate("wishlist");
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json(user.wishlist || []);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// POST /api/wishlist — add item to wishlist
+app.post("/api/wishlist", verifyToken, async (req, res) => {
+    try {
+        const { productId } = req.body;
+        if (!productId) return res.status(400).json({ message: "Product ID is required" });
+
+        const user = await User.findById(req.verifiedUser.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (!user.wishlist) user.wishlist = [];
+
+        // Check using string comparison to avoid strict ObjectId equality issues
+        const isExists = user.wishlist.some(id => id && id.toString() === productId);
+        if (isExists) {
+            return res.status(400).json({ message: "Item already in wishlist" });
+        }
+
+        user.wishlist.push(productId);
+        await user.save();
+
+        const populatedUser = await User.findById(req.verifiedUser.id).populate("wishlist");
+        res.json(populatedUser.wishlist);
+    } catch (err) {
+        console.error("Wishlist add error:", err.message);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE /api/wishlist/:productId — remove item from wishlist
+app.delete("/api/wishlist/:productId", verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.verifiedUser.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.wishlist) {
+            user.wishlist = user.wishlist.filter(id => id && id.toString() !== req.params.productId);
+            await user.save();
+        }
+
+        const populatedUser = await User.findById(req.verifiedUser.id).populate("wishlist");
+        res.json(populatedUser.wishlist || []);
+    } catch (err) {
+        console.error("Wishlist delete error:", err.message);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 // ── Admin Routes ──
 

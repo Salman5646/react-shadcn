@@ -28,11 +28,13 @@ export function removeUser() {
 export async function verifySession() {
     try {
         const res = await fetch("/api/me", { credentials: "include" });
-        if (res.ok) {
-            const data = await res.json();
+        const data = await res.json();
+
+        if (data.user) {
             return data.user;
-        }   
-        // Session invalid — clear the client-side cookie
+        }
+
+        // Session explicitly null or guest — clear the client-side cookie if it exists
         Cookies.remove(USER_COOKIE_KEY);
         return null;
     } catch {

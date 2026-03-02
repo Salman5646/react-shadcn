@@ -3,10 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "../comps/Navbar";
 import { Footer } from "../comps/Footer";
 import { Button } from "@/components/ui/button";
-import { Star, StarHalf, ShoppingCart, ArrowLeft, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus } from "lucide-react";
+import { Star, StarHalf, ShoppingCart, ArrowLeft, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus, Heart } from "lucide-react";
 import * as cartService from "@/lib/cartService";
+import * as wishlistService from "@/lib/wishlistService";
 import { verifySession } from "@/lib/cookieUtils";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 
 const ProductPage = () => {
@@ -18,19 +20,43 @@ const ProductPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [ratingValue, setRatingValue] = useState(5);
     const [commentValue, setCommentValue] = useState("");
+    const [cartItems, setCartItems] = useState([]);
+    const [wishlistItems, setWishlistItems] = useState([]);
 
     useEffect(() => {
-        verifySession().then(verified => setUser(verified));
+        const loadUserAndCart = async () => {
+            const verifiedUser = await verifySession();
+            setUser(verifiedUser);
+            const items = await cartService.getCart(verifiedUser);
+            setCartItems(items);
+            const wItems = await wishlistService.getWishlist(verifiedUser);
+            setWishlistItems(wItems);
+        };
+        loadUserAndCart();
+
         const handleAuthChange = () => {
             verifySession().then(verified => setUser(verified));
         };
+        const handleCartChange = async () => {
+            const items = await cartService.getCart(user || await verifySession());
+            setCartItems(items);
+        };
+        const handleWishlistChange = async () => {
+            const items = await wishlistService.getWishlist(user || await verifySession());
+            setWishlistItems(items);
+        };
+
         window.addEventListener("storage", handleAuthChange);
         window.addEventListener("userChange", handleAuthChange);
+        window.addEventListener("cartUpdate", handleCartChange);
+        window.addEventListener("wishlistUpdate", handleWishlistChange);
         return () => {
             window.removeEventListener("storage", handleAuthChange);
             window.removeEventListener("userChange", handleAuthChange);
+            window.removeEventListener("cartUpdate", handleCartChange);
+            window.removeEventListener("wishlistUpdate", handleWishlistChange);
         };
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -71,18 +97,52 @@ const ProductPage = () => {
 
     const handleAddToCart = async () => {
         if (!product) return;
-        const cartItems = await cartService.getCart(user);
-        const isItemInCart = cartItems.some(item => item.productId === product._id);
 
-        if (!isItemInCart) {
-            await cartService.addToCart(product, user);
-            window.dispatchEvent(new Event("cartUpdate"));
-            toast.success(`${product.product_name} added to cart`, {
-                description: "Check your cart for the updated item listing."
-            });
+        const verifiedUser = await verifySession();
+        await cartService.addToCart(product, verifiedUser);
+
+        // Trigger updates
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new Event("cartUpdate"));
+
+        const currentTime = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        toast.success(`${product.product_name} added successfully`, {
+            description: `Added on ${new Date().toLocaleDateString()} at ${currentTime}`,
+            action: {
+                label: "Close",
+                onClick: () => { },
+            },
+        });
+    };
+
+    const handleToggleWishlist = async () => {
+        if (!product) return;
+        const isInWishlist = wishlistItems.some(item => (item._id || item.productId) === product._id);
+        const updated = await wishlistService.toggleWishlist(product, user, isInWishlist);
+        if (updated) setWishlistItems(updated);
+    };
+
+    const handleUpdateQuantity = async (delta) => {
+        const cartItem = cartItems.find(item => (item.productId || item._id) === product._id);
+        if (!cartItem) return;
+
+        const newQuantity = (cartItem.quantity || 1) + delta;
+        const verifiedUser = await verifySession();
+
+        if (newQuantity < 1) {
+            // Find index for removeFromCart (though removeFromCart in cartService uses product._id if available)
+            const index = cartItems.findIndex(item => (item.productId || item._id) === product._id);
+            await cartService.removeFromCart(product, index, verifiedUser);
+            toast.info(`${product.product_name} removed from cart`);
         } else {
-            toast.error("Item is already in your cart.");
+            await cartService.updateQuantity(product, newQuantity, verifiedUser);
         }
+        window.dispatchEvent(new Event("cartUpdate"));
+        window.dispatchEvent(new Event("storage"));
     };
 
     const getProductLabels = (product) => {
@@ -263,13 +323,57 @@ const ProductPage = () => {
                         </div>
 
                         <div className="space-y-4 pt-4">
-                            <Button
-                                onClick={handleAddToCart}
-                                className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-black shadow-2xl shadow-blue-500/30 transform active:scale-95 transition-all flex items-center justify-center gap-3 group"
-                            >
-                                <ShoppingCart className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                                Add to Collection
-                            </Button>
+                            {cartItems.some(item => (item.productId || item._id) === product._id) ? (
+                                <div className="flex items-center justify-between w-full h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border-2 border-blue-500/30 px-6">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-10 w-10 bg-white dark:bg-slate-800 shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-all active:scale-90"
+                                        onClick={() => handleUpdateQuantity(-1)}
+                                    >
+                                        <span className="text-xl font-bold">-</span>
+                                    </Button>
+
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                                            {cartItems.find(item => (item.productId || item._id) === product._id)?.quantity || 1}
+                                        </span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/70">In Collection</span>
+                                    </div>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-10 w-10 bg-white dark:bg-slate-800 shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-all active:scale-90"
+                                        onClick={() => handleUpdateQuantity(1)}
+                                    >
+                                        <span className="text-xl font-bold">+</span>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex gap-4">
+                                    <Button
+                                        onClick={handleAddToCart}
+                                        className="flex-grow h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-black shadow-2xl shadow-blue-500/30 transform active:scale-95 transition-all flex items-center justify-center gap-3 group"
+                                    >
+                                        <ShoppingCart className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                                        Add to Collection
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={handleToggleWishlist}
+                                        className={cn(
+                                            "h-16 w-16 rounded-2xl border-2 transition-all transform active:scale-90",
+                                            wishlistItems.some(item => (item._id || item.productId) === product._id)
+                                                ? "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-500"
+                                                : "border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
+                                        )}
+                                    >
+                                        <Heart className={cn("w-7 h-7", wishlistItems.some(item => (item._id || item.productId) === product._id) && "fill-current")} />
+                                    </Button>
+                                </div>
+                            )}
                             <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
                                 <RefreshCw className="w-3 h-3" /> 30-Day Easy Returns Guarantee
                             </p>
