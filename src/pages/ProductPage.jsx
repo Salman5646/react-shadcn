@@ -3,6 +3,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "../comps/Navbar";
 import { Footer } from "../comps/Footer";
 import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Star, StarHalf, ShoppingCart, ArrowLeft, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus, Heart } from "lucide-react";
 import * as cartService from "@/lib/cartService";
 import * as wishlistService from "@/lib/wishlistService";
@@ -18,6 +29,7 @@ const ProductPage = () => {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [ratingValue, setRatingValue] = useState(5);
     const [commentValue, setCommentValue] = useState("");
     const [cartItems, setCartItems] = useState([]);
@@ -38,11 +50,13 @@ const ProductPage = () => {
             verifySession().then(verified => setUser(verified));
         };
         const handleCartChange = async () => {
-            const items = await cartService.getCart(user || await verifySession());
+            const verified = await verifySession();
+            const items = await cartService.getCart(verified);
             setCartItems(items);
         };
         const handleWishlistChange = async () => {
-            const items = await wishlistService.getWishlist(user || await verifySession());
+            const verified = await verifySession();
+            const items = await wishlistService.getWishlist(verified);
             setWishlistItems(items);
         };
 
@@ -56,7 +70,7 @@ const ProductPage = () => {
             window.removeEventListener("cartUpdate", handleCartChange);
             window.removeEventListener("wishlistUpdate", handleWishlistChange);
         };
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -165,6 +179,7 @@ const ProductPage = () => {
             const res = await fetch(`/api/products/${id}/reviews`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({ rating: ratingValue, comment: commentValue }),
             });
             const data = await res.json();
@@ -182,11 +197,12 @@ const ProductPage = () => {
     };
 
     const handleDeleteReview = async () => {
-        if (!confirm("Are you sure you want to delete your review?")) return;
+        setShowDeleteDialog(false);
 
         try {
             const res = await fetch(`/api/products/${id}/reviews`, {
                 method: "DELETE",
+                credentials: "include",
             });
             const data = await res.json();
             if (res.ok) {
@@ -466,14 +482,34 @@ const ProductPage = () => {
                                                     {isSubmitting ? "Processing..." : (userReview ? "Confirm Update" : "Post Review")}
                                                 </Button>
                                                 {userReview && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        onClick={handleDeleteReview}
-                                                        className="w-full h-14 text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" /> Delete permanently
-                                                    </Button>
+                                                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                className="w-full h-14 text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl"
+                                                            >
+                                                                <Trash2 className="w-4 h-4 mr-2" /> Delete permanently
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete your review?</AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-muted-foreground">
+                                                                    This will permanently remove your review and rating. This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={handleDeleteReview}
+                                                                    className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                                                                >
+                                                                    Delete Review
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 )}
                                             </div>
                                         </form>

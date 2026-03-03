@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import Product from "./models/Product.js";
 import User from "./models/User.js";
 import Cart from "./models/Cart.js";
+import Notification from "./models/Notification.js";
 
 dotenv.config();
 
@@ -158,6 +159,16 @@ app.post("/api/products/:id/reviews", verifyToken, async (req, res) => {
         // Final sanity check
         const checkProduct = await Product.findById(productId);
 
+        // Send a notification to the user
+        try {
+            await Notification.create({
+                userId: req.verifiedUser.id,
+                title: existingReviewIndex > -1 ? "Review Updated ✍️" : "Review Published ✍️",
+                message: `Your review on "${product.product_name}" is now live!`,
+                type: "success",
+            });
+        } catch (_) { /* non-critical */ }
+
         res.status(existingReviewIndex > -1 ? 200 : 201).json({
             message: existingReviewIndex > -1 ? "Review updated successfully" : "Review added successfully",
             product: checkProduct
@@ -206,6 +217,17 @@ app.post("/api/register", async (req, res) => {
             country: user.country,
         }));
         setTokenCookie(res, userData);
+
+        // Create a welcome notification for the new user
+        try {
+            await Notification.create({
+                userId: user._id,
+                title: "Welcome to Shopr! 🎉",
+                message: "Thanks for joining! Explore our products and start shopping.",
+                type: "success",
+            });
+        } catch (_) { /* non-critical */ }
+
         res.status(201).json({
             message: "Account created successfully",
             user: userData,
@@ -460,6 +482,65 @@ app.delete("/api/wishlist/:productId", verifyToken, async (req, res) => {
     }
 });
 
+
+// ── Notification Routes (authenticated users only) ──
+
+// GET /api/notifications — fetch user's notifications (newest first)
+app.get("/api/notifications", verifyToken, async (req, res) => {
+    try {
+        const notifications = await Notification.find({ userId: req.verifiedUser.id })
+            .sort({ createdAt: -1 })
+            .limit(50);
+        res.json(notifications);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT /api/notifications/:id/read — mark single notification as read
+app.put("/api/notifications/:id/read", verifyToken, async (req, res) => {
+    try {
+        const notification = await Notification.findOneAndUpdate(
+            { _id: req.params.id, userId: req.verifiedUser.id },
+            { read: true },
+            { new: true }
+        );
+        if (!notification) return res.status(404).json({ message: "Notification not found" });
+        res.json(notification);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT /api/notifications/read-all — mark all user notifications as read
+app.put("/api/notifications/read-all", verifyToken, async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { userId: req.verifiedUser.id, read: false },
+            { read: true }
+        );
+        const notifications = await Notification.find({ userId: req.verifiedUser.id })
+            .sort({ createdAt: -1 })
+            .limit(50);
+        res.json(notifications);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE /api/notifications/:id — delete a single notification
+app.delete("/api/notifications/:id", verifyToken, async (req, res) => {
+    try {
+        const notification = await Notification.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.verifiedUser.id,
+        });
+        if (!notification) return res.status(404).json({ message: "Notification not found" });
+        res.json({ message: "Notification deleted" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 // ── Admin Routes ──
 

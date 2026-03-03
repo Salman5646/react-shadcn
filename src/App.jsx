@@ -18,6 +18,8 @@ import { AccountSettings } from "./pages/AccountSettings";
 import ProductPage from "./pages/ProductPage";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import Wishlist from "./pages/Wishlist";
+import { PrivacyPolicy } from "./pages/PrivacyPolicy";
+import { TermsOfService } from "./pages/TermsOfService";
 export function App() {
   return (
     <>
@@ -34,6 +36,8 @@ export function App() {
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
       </Routes>
       <Toaster
         richColors

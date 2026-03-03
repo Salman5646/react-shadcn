@@ -7,6 +7,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom"
 import React, { useState, useEffect } from "react"
 import logo from "../images/logo.png"
 import { Menu, Home, Users, Info, Phone, LogIn, LogOut, Settings, ShoppingCart, Search, X, Moon, Sun, Heart } from "lucide-react"
+import { NotificationBell } from "./NotificationBell"
 import {
     Sheet,
     SheetContent,
@@ -114,11 +115,12 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                 <div className="flex items-center gap-4 py-3 px-4 md:px-8 max-w-screen-2xl mx-auto">
 
                     {/* Logo — left */}
-                    <Link to="/" className="flex-shrink-0">
-                        <Avatar className="border-none h-9 w-9">
+                    <Link to="/" className="flex items-center gap-1.5 flex-shrink-0">
+                        <Avatar className="border-none h-7 w-7">
                             <AvatarImage src={logo} alt="Shopr" />
                             <AvatarFallback>S</AvatarFallback>
                         </Avatar>
+                        <span className="font-bold text-base tracking-tight">Shopr.</span>
                     </Link>
 
                     {/* Search bar — centered, fills space, but has max-width */}
@@ -147,19 +149,15 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                     <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         {/* Desktop nav links */}
                         <nav className="hidden md:flex items-center gap-1">
-                            {user?.role === "admin" ? (
+                            {user?.role === "admin" && (
                                 <>
                                     <NavLink to="/" icon={Home}>Dashboard</NavLink>
                                     <NavLink to="/admin/users" icon={Users}>Users</NavLink>
                                 </>
-                            ) : (
-                                <>
-                                    <NavLink to="/" icon={Home}>Home</NavLink>
-                                    <NavLink to="/about" icon={Info}>About</NavLink>
-                                    <NavLink to="/contact" icon={Phone}>Contact</NavLink>
-                                </>
                             )}
                         </nav>
+
+
 
                         {/* Dark mode toggle — always visible, between search and menu/dropdown */}
                         <button
@@ -170,8 +168,8 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                             {darkMode ? <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                         </button>
 
-                        {/* User dropdown — desktop */}
-                        <div className="hidden md:flex">
+                        {/* User account area — desktop */}
+                        <div className="hidden md:flex items-center gap-1">
                             {user ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -238,6 +236,7 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                                     </Button>
                                 </Link>
                             )}
+                            {user && <NotificationBell />}
                         </div>
 
                         {/* Mobile hamburger */}
@@ -280,8 +279,6 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                                             <>
                                                 <MobileLink to="/" icon={Home} onClick={() => setOpen(false)}>Home</MobileLink>
                                                 <MobileLink to="/wishlist" icon={Heart} onClick={() => setOpen(false)}>Wishlist</MobileLink>
-                                                <MobileLink to="/about" icon={Info} onClick={() => setOpen(false)}>About</MobileLink>
-                                                <MobileLink to="/contact" icon={Phone} onClick={() => setOpen(false)}>Contact</MobileLink>
                                             </>
                                         )}
 
@@ -290,6 +287,7 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                                                 <div className="my-2 h-px bg-border" />
                                                 <MobileLink to="/account" icon={Settings}>Account Settings</MobileLink>
                                                 <MobileLink to="/cart" icon={ShoppingCart}>My Cart</MobileLink>
+                                                <NotificationBell />
                                             </>
                                         )}
 
@@ -326,7 +324,7 @@ export function Navbarwithsearch({ searchTerm, setSearchTerm, resultCount, toggl
                         </div>
                     </div>
                 </div>
-            </header>
+            </header >
         </>
     )
 }

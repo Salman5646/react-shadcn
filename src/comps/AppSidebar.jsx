@@ -71,18 +71,17 @@ export function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton isActive={location.pathname === "/"}>
-                                    <span className="flex items-center gap-2"><Link to="/">🏠 {user?.role === "admin" ? "Dashboard" : "Home"}</Link></span>
+                                <SidebarMenuButton asChild isActive={location.pathname === "/"}>
+                                    <Link to="/">🏠 {user?.role === "admin" ? "Dashboard" : "Home"}</Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             {user?.role === "admin" ? (
                                 <>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton>
-                                            <span className="flex items-center gap-2"><Link to="/admin/users">👥 Users</Link></span>
+                                        <SidebarMenuButton asChild>
+                                            <Link to="/admin/users">👥 Users</Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
-
                                 </>
                             ) : (
                                 <>
@@ -93,9 +92,7 @@ export function AppSidebar() {
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton asChild isActive={location.pathname === "/wishlist"}>
-                                            <Link to="/wishlist" className="flex items-center gap-2">
-                                                <span>❤️ Wishlist</span>
-                                            </Link>
+                                            <Link to="/wishlist">❤️ Wishlist</Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>
@@ -104,8 +101,26 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-
                 <SidebarSeparator />
+
+                {/* Explore Group */}
+                <SidebarGroup>
+                    <SidebarGroupLabel>Explore</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild isActive={location.pathname === "/about"}>
+                                    <Link to="/about">ℹ️ About Us</Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild isActive={location.pathname === "/contact"}>
+                                    <Link to="/contact">📞 Contact</Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
 
                 {/* Account Group */}
                 <SidebarGroup>
