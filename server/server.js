@@ -215,6 +215,8 @@ app.post("/api/register", async (req, res) => {
             address: user.address,
             city: user.city,
             country: user.country,
+            coins: user.coins,
+            loginStreak: user.loginStreak || 0,
         }));
         setTokenCookie(res, userData);
 
@@ -237,6 +239,44 @@ app.post("/api/register", async (req, res) => {
     }
 });
 
+// ── Daily Login Reward Helper ──
+async function processLoginReward(user) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastReward = user.lastLoginReward ? new Date(user.lastLoginReward) : null;
+    const lastRewardDay = lastReward
+        ? new Date(lastReward.getFullYear(), lastReward.getMonth(), lastReward.getDate())
+        : null;
+
+    // Already claimed today
+    if (lastRewardDay && lastRewardDay.getTime() === today.getTime()) {
+        return null;
+    }
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Check if streak continues (last reward was yesterday) or resets
+    if (lastRewardDay && lastRewardDay.getTime() === yesterday.getTime()) {
+        user.loginStreak = (user.loginStreak || 0) + 1;
+    } else {
+        user.loginStreak = 1; // reset streak
+    }
+
+    const isDay7 = user.loginStreak >= 7;
+    const reward = isDay7 ? 100 : 50;
+
+    user.coins = (user.coins || 0) + reward;
+    user.lastLoginReward = now;
+
+    // Reset streak after day 7
+    if (isDay7) user.loginStreak = 0;
+
+    await user.save();
+
+    return { reward, streak: isDay7 ? 7 : user.loginStreak, isDay7 };
+}
+
 // POST login a user
 app.post("/api/login", async (req, res) => {
     try {
@@ -254,6 +294,9 @@ app.post("/api/login", async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
+        // Process daily login reward
+        const loginReward = await processLoginReward(user);
+
         // Normalize to plain JSON (converts ObjectId to string) so HMAC matches cookie round-trip
         const userData = JSON.parse(JSON.stringify({
             id: user._id,
@@ -264,11 +307,14 @@ app.post("/api/login", async (req, res) => {
             address: user.address,
             city: user.city,
             country: user.country,
+            coins: user.coins,
+            loginStreak: user.loginStreak || 0,
         }));
         setTokenCookie(res, userData);
         res.json({
             message: "Login successful",
             user: userData,
+            loginReward,
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -312,6 +358,12 @@ app.post("/api/google-auth", async (req, res) => {
             });
         }
 
+        // Process daily login reward for existing users (skip brand-new signups)
+        let loginReward = null;
+        if (user.createdAt && (Date.now() - new Date(user.createdAt).getTime() > 5000)) {
+            loginReward = await processLoginReward(user);
+        }
+
         // Normalize to plain JSON (converts ObjectId to string) so HMAC matches cookie round-trip
         const userData = JSON.parse(JSON.stringify({
             id: user._id,
@@ -322,11 +374,14 @@ app.post("/api/google-auth", async (req, res) => {
             address: user.address,
             city: user.city,
             country: user.country,
+            coins: user.coins,
+            loginStreak: user.loginStreak || 0,
         }));
         setTokenCookie(res, userData);
         res.json({
             message: "Login successful",
             user: userData,
+            loginReward,
         });
     } catch (err) {
         console.error("Google auth error:", err.message);
@@ -369,6 +424,8 @@ app.put("/api/update-profile", async (req, res) => {
             address: user.address,
             city: user.city,
             country: user.country,
+            coins: user.coins,
+            loginStreak: user.loginStreak || 0,
         }));
         setTokenCookie(res, userData);
         res.json({
@@ -382,17 +439,54 @@ app.put("/api/update-profile", async (req, res) => {
 
 // ── Session Verification ──
 
-// GET /api/me — verify the JWT token cookie
-app.get("/api/me", (req, res) => {
+// GET /api/me — verify the JWT token cookie and process daily login reward
+app.get("/api/me", async (req, res) => {
     try {
         const token = req.cookies.token;
         if (!token) {
             return res.json({ user: null });
         }
-        const userData = jwt.verify(token, JWT_SECRET);
-        // Strip JWT internal fields before sending to client
-        const { iat, exp, ...user } = userData;
-        res.json({ user });
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const { iat, exp, ...sessionUser } = decoded;
+
+        if (!sessionUser.id) {
+            return res.json({ user: sessionUser });
+        }
+
+        // Fetch user from DB to check daily login reward capability
+        const user = await User.findById(sessionUser.id);
+        if (!user) {
+            res.clearCookie("token");
+            return res.json({ user: null });
+        }
+
+        // Process daily login reward
+        let loginReward = null;
+        if (user.createdAt && (Date.now() - new Date(user.createdAt).getTime() > 5000)) {
+            // we don't reward sub-5s newly created accounts to avoid double-toast on register
+            loginReward = await processLoginReward(user);
+        }
+
+        // Prepare updated user payload for frontend & token
+        const userData = JSON.parse(JSON.stringify({
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            country: user.country,
+            coins: user.coins,
+        }));
+
+        // If a reward was granted, issue a new cookie so the frontend sees the new coin balance
+        if (loginReward) {
+            setTokenCookie(res, userData);
+        }
+
+        res.json({ user: userData, loginReward });
     } catch (err) {
         res.clearCookie("token");
         return res.json({ user: null });
@@ -482,6 +576,70 @@ app.delete("/api/wishlist/:productId", verifyToken, async (req, res) => {
     }
 });
 
+
+// ── Coin Routes (authenticated users only) ──
+
+// GET /api/coins — fetch user's live coin balance from DB
+app.get("/api/coins", verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.verifiedUser.id).select("coins");
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json({ coins: user.coins ?? 100 });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// POST /api/checkout — purchase cart items using coins
+app.post("/api/checkout", verifyToken, async (req, res) => {
+    try {
+        const userId = req.verifiedUser.id;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const cart = await Cart.findOne({ userId }).populate("items.productId");
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ message: "Your cart is empty" });
+        }
+
+        // Calculate total
+        const total = cart.items.reduce((sum, item) => {
+            if (!item.productId) return sum;
+            return sum + (item.productId.price * (item.quantity || 1));
+        }, 0);
+
+        const totalRounded = Math.round(total * 100) / 100;
+
+        if ((user.coins ?? 0) < totalRounded) {
+            return res.status(400).json({
+                message: `Not enough coins. You have ${user.coins ?? 0} coins but need ${totalRounded}.`,
+            });
+        }
+
+        // Deduct coins and clear cart
+        user.coins = Math.round(((user.coins ?? 0) - totalRounded) * 100) / 100;
+        await user.save();
+        await Cart.findOneAndDelete({ userId });
+
+        // Send purchase notification
+        try {
+            await Notification.create({
+                userId,
+                title: "Order Placed 🛍️",
+                message: `You spent ${totalRounded} coins. Remaining balance: ${user.coins} coins.`,
+                type: "order",
+            });
+        } catch (_) { /* non-critical */ }
+
+        res.json({
+            message: "Order placed successfully!",
+            coins: user.coins,
+            spent: totalRounded,
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 // ── Notification Routes (authenticated users only) ──
 
@@ -919,8 +1077,20 @@ app.post("/api/reset-password", async (req, res) => {
         const userData = JSON.parse(JSON.stringify({
             id: user._id, name: user.name, email: user.email, role: user.role,
             phone: user.phone, address: user.address, city: user.city, country: user.country,
+            coins: user.coins,
+            loginStreak: user.loginStreak || 0,
         }));
         setTokenCookie(res, userData);
+
+        // Notify user about the password change
+        try {
+            await Notification.create({
+                userId: user._id,
+                title: "Password Changed 🔒",
+                message: "Your password was successfully reset. If this wasn't you, please contact support immediately.",
+                type: "warning",
+            });
+        } catch (_) { /* non-critical */ }
 
         res.json({ message: "Password reset successful", user: userData });
     } catch (err) {

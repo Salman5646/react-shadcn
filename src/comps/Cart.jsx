@@ -3,13 +3,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Cards } from "./Cards"
-import { ChevronLeft, Trash } from "lucide-react"
+import { ChevronLeft, Trash, Coins } from "lucide-react"
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "./AppSidebar"
 import { verifySession } from "@/lib/cookieUtils"
 import * as cartService from "@/lib/cartService"
+import { toast } from "sonner"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,6 +25,8 @@ import {
 export default function Cart() {
     const [cartItems, setCartItems] = useState([]);
     const [user, setUser] = useState(null);
+    const [coins, setCoins] = useState(null);
+    const [checkingOut, setCheckingOut] = useState(false);
     // Calculating total using reduce
     const total = cartItems.reduce((acc, item) => {
 
@@ -55,6 +58,20 @@ export default function Cart() {
         return () => window.removeEventListener("cartUpdate", handler);
     }, [user]);
 
+    useEffect(() => {
+        const loadCoins = async () => {
+            if (!user) return;
+            try {
+                const res = await fetch("/api/coins", { credentials: "include" });
+                if (res.ok) {
+                    const data = await res.json();
+                    setCoins(data.coins);
+                }
+            } catch (_) { }
+        };
+        loadCoins();
+    }, [user]);
+
     const clearCartHandler = async () => {
         await cartService.clearCart(user);
         setCartItems([]);
@@ -75,6 +92,39 @@ export default function Cart() {
             setCartItems(items);
         }
     };
+
+    const handleCheckout = async () => {
+        if (!user) {
+            toast.error("Please login to checkout");
+            return;
+        }
+        setCheckingOut(true);
+        try {
+            const res = await fetch("/api/checkout", {
+                method: "POST",
+                credentials: "include",
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setCartItems([]);
+                setCoins(data.coins);
+                toast.success(data.message, {
+                    description: `Spent ${data.spent} coins. Remaining: ${data.coins} coins.`,
+                });
+                window.dispatchEvent(new Event("cartUpdate"));
+                window.dispatchEvent(new Event("coinsUpdate"));
+            } else {
+                toast.error(data.message);
+            }
+        } catch (err) {
+            toast.error("Checkout failed. Please try again.");
+        } finally {
+            setCheckingOut(false);
+        }
+    };
+
+    const hasEnoughCoins = coins !== null && coins >= Math.round(total * 100) / 100;
+
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
@@ -138,7 +188,7 @@ export default function Cart() {
                                             <TableRow className="border-gray-200 dark:border-zinc-800">
                                                 <TableHead className="text-gray-600 dark:text-zinc-300">Description</TableHead>
                                                 <TableHead className="text-gray-600 dark:text-zinc-300">Details</TableHead>
-                                                <TableHead className="text-right text-zinc-300">Amount</TableHead>
+                                                <TableHead className="text-right text-gray-600 dark:text-zinc-300">Amount</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -154,17 +204,33 @@ export default function Cart() {
                                                 <TableCell className="text-gray-500 dark:text-zinc-400">Standard Delivery</TableCell>
                                                 <TableCell className="text-right text-green-500 font-bold uppercase">Free</TableCell>
                                             </TableRow>
+                                            <TableRow className="border-gray-200 dark:border-zinc-800">
+                                                <TableCell className="font-medium flex items-center gap-1.5">
+                                                    <Coins className="h-4 w-4 text-yellow-500" /> Your Coins
+                                                </TableCell>
+                                                <TableCell className="text-gray-500 dark:text-zinc-400">Available Balance</TableCell>
+                                                <TableCell className={`text-right font-bold font-mono ${hasEnoughCoins ? "text-green-500" : "text-red-500"}`}>
+                                                    {coins !== null ? coins : "—"}
+                                                </TableCell>
+                                            </TableRow>
                                             <TableRow className="border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800/20">
                                                 <TableCell colSpan={2} className="text-lg font-bold">Total Payable</TableCell>
                                                 <TableCell className="text-right text-black dark:text-white font-bold font-mono">
-                                                    ${total.toFixed(2)}
+                                                    {total.toFixed(2)} coins
                                                 </TableCell>
                                             </TableRow>
                                         </TableBody>
                                     </Table>
                                     <div className="p-4 bg-gray-100 dark:bg-zinc-900">
-                                        <Button className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-zinc-200 py-6 text-lg font-bold rounded-lg shadow-xl">
-                                            Proceed to Payment
+                                        <Button
+                                            onClick={handleCheckout}
+                                            disabled={checkingOut || !hasEnoughCoins}
+                                            className={`w-full py-6 text-lg font-bold rounded-lg shadow-xl ${hasEnoughCoins
+                                                ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-zinc-200"
+                                                : "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
+                                                }`}
+                                        >
+                                            {checkingOut ? "Processing..." : !hasEnoughCoins ? `Not Enough Coins (Need ${Math.round(total * 100) / 100})` : `Pay ${total.toFixed(2)} Coins`}
                                         </Button>
                                     </div>
                                 </div>

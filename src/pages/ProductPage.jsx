@@ -338,62 +338,64 @@ const ProductPage = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-4 pt-4">
-                            {cartItems.some(item => (item.productId || item._id) === product._id) ? (
-                                <div className="flex items-center justify-between w-full h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border-2 border-blue-500/30 px-6">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-10 w-10 bg-white dark:bg-slate-800 shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-all active:scale-90"
-                                        onClick={() => handleUpdateQuantity(-1)}
-                                    >
-                                        <span className="text-xl font-bold">-</span>
-                                    </Button>
+                        {(!user || user.role !== "admin") && (
+                            <div className="space-y-4 pt-4">
+                                {cartItems.some(item => (item.productId || item._id) === product._id) ? (
+                                    <div className="flex items-center justify-between w-full h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border-2 border-blue-500/30 px-6">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-10 w-10 bg-white dark:bg-slate-800 shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-all active:scale-90"
+                                            onClick={() => handleUpdateQuantity(-1)}
+                                        >
+                                            <span className="text-xl font-bold">-</span>
+                                        </Button>
 
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                                            {cartItems.find(item => (item.productId || item._id) === product._id)?.quantity || 1}
-                                        </span>
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/70">In Collection</span>
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                                                {cartItems.find(item => (item.productId || item._id) === product._id)?.quantity || 1}
+                                            </span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400/70">In Collection</span>
+                                        </div>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-10 w-10 bg-white dark:bg-slate-800 shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-all active:scale-90"
+                                            onClick={() => handleUpdateQuantity(1)}
+                                        >
+                                            <span className="text-xl font-bold">+</span>
+                                        </Button>
                                     </div>
-
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-10 w-10 bg-white dark:bg-slate-800 shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-xl transition-all active:scale-90"
-                                        onClick={() => handleUpdateQuantity(1)}
-                                    >
-                                        <span className="text-xl font-bold">+</span>
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="flex gap-4">
-                                    <Button
-                                        onClick={handleAddToCart}
-                                        className="flex-grow h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-black shadow-2xl shadow-blue-500/30 transform active:scale-95 transition-all flex items-center justify-center gap-3 group"
-                                    >
-                                        <ShoppingCart className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                                        Add to Collection
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={handleToggleWishlist}
-                                        className={cn(
-                                            "h-16 w-16 rounded-2xl border-2 transition-all transform active:scale-90",
-                                            wishlistItems.some(item => (item._id || item.productId) === product._id)
-                                                ? "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-500"
-                                                : "border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
-                                        )}
-                                    >
-                                        <Heart className={cn("w-7 h-7", wishlistItems.some(item => (item._id || item.productId) === product._id) && "fill-current")} />
-                                    </Button>
-                                </div>
-                            )}
-                            <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                                <RefreshCw className="w-3 h-3" /> 30-Day Easy Returns Guarantee
-                            </p>
-                        </div>
+                                ) : (
+                                    <div className="flex gap-4">
+                                        <Button
+                                            onClick={handleAddToCart}
+                                            className="flex-grow h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-black shadow-2xl shadow-blue-500/30 transform active:scale-95 transition-all flex items-center justify-center gap-3 group"
+                                        >
+                                            <ShoppingCart className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                                            Add to Collection
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={handleToggleWishlist}
+                                            className={cn(
+                                                "h-16 w-16 rounded-2xl border-2 transition-all transform active:scale-90",
+                                                wishlistItems.some(item => (item._id || item.productId) === product._id)
+                                                    ? "bg-red-50 dark:bg-red-900/20 border-red-500/30 text-red-500"
+                                                    : "border-slate-200 dark:border-slate-800 text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
+                                            )}
+                                        >
+                                            <Heart className={cn("w-7 h-7", wishlistItems.some(item => (item._id || item.productId) === product._id) && "fill-current")} />
+                                        </Button>
+                                    </div>
+                                )}
+                                <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                                    <RefreshCw className="w-3 h-3" /> 30-Day Easy Returns Guarantee
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -429,7 +431,15 @@ const ProductPage = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
                             {/* Review Form Sidebar */}
                             <div className="lg:col-span-4 space-y-10">
-                                {user ? (
+                                {user && user.role === "admin" ? (
+                                    <div className="p-10 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
+                                        <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6 text-slate-400">
+                                            <ShieldCheck className="w-8 h-8" />
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3">Admin Mode</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm px-4 leading-relaxed">Reviews are a customer feature. You're viewing this page as an administrator.</p>
+                                    </div>
+                                ) : user ? (
                                     <div className="p-8 rounded-[2rem] bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
                                         <div className="flex items-center gap-3 mb-8">
                                             <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">

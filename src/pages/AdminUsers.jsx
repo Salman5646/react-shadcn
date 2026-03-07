@@ -109,10 +109,10 @@ export function AdminUsers() {
             <Navbar />
             <div className="p-4 md:p-8 flex-1 bg-white dark:bg-black min-h-screen transition-colors duration-300">
                 <div className="flex items-center gap-4 mb-6">
-                    <Link to="/" className="text-white hover:text-gray-300 transition-colors">
+                    <Link to="/" className="text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                         <ChevronLeft className="h-6 w-6" />
                     </Link>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-black dark:text-white flex items-center gap-2">
                         Users
                     </h1>
                     <Button variant="outline" size="sm" onClick={fetchUsers} className="ml-auto">

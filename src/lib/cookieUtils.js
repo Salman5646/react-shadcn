@@ -31,6 +31,10 @@ export async function verifySession() {
         const data = await res.json();
 
         if (data.user) {
+            if (data.loginReward) {
+                window.dispatchEvent(new CustomEvent("loginReward", { detail: data.loginReward }));
+                window.dispatchEvent(new Event("coinsUpdate"));
+            }
             return data.user;
         }
 

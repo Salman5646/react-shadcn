@@ -20,7 +20,12 @@ import { ForgotPassword } from "./pages/ForgotPassword";
 import Wishlist from "./pages/Wishlist";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfService } from "./pages/TermsOfService";
+import { CoinsInfo } from "./pages/CoinsInfo";
+import { DailyRewardModal } from "./comps/DailyRewardModal";
+
 export function App() {
+
+
   return (
     <>
       <Routes>
@@ -38,6 +43,7 @@ export function App() {
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/coins" element={<CoinsInfo />} />
       </Routes>
       <Toaster
         richColors
@@ -72,6 +78,7 @@ export function App() {
           }
         }}
       />
+      <DailyRewardModal />
     </>
   )
 }

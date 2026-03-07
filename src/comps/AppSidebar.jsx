@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { CircleUser, LogOut } from "lucide-react";
+import { CircleUser, LogOut, Coins, Home, Package, Heart, Info, Phone, Settings, MapPin, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { verifySession, serverLogout } from "@/lib/cookieUtils";
 import { useSidebar, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator } from "@/components/ui/sidebar";
@@ -41,58 +41,120 @@ export function AppSidebar() {
         navigate("/");
     };
 
+    const [coins, setCoins] = useState(null);
+
+    useEffect(() => {
+        const loadCoins = async () => {
+            if (!user || user.role === "admin") return;
+            try {
+                const res = await fetch("/api/coins", { credentials: "include" });
+                if (res.ok) {
+                    const data = await res.json();
+                    setCoins(data.coins);
+                }
+            } catch (_) { }
+        };
+        loadCoins();
+
+        const handler = () => loadCoins();
+        window.addEventListener("coinsUpdate", handler);
+        window.addEventListener("cartUpdate", handler);
+        return () => {
+            window.removeEventListener("coinsUpdate", handler);
+            window.removeEventListener("cartUpdate", handler);
+        };
+    }, [user]);
+
     return (
-        <Sidebar collapsible="offcanvas">
-            <SidebarHeader className="border-b border-sidebar-border pb-4">
-                <div className="flex items-center gap-3 px-2 pt-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-black font-bold">
+        <Sidebar collapsible="offcanvas" className="border-r border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-zinc-950 transition-colors duration-300">
+            <SidebarHeader className="border-b border-zinc-100 dark:border-zinc-800/50 pb-6 pt-6 px-4">
+                <div className="flex items-center gap-4">
+                    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white font-bold text-lg shadow-sm shadow-indigo-500/20">
                         {user ? user.name.charAt(0).toUpperCase() : "?"}
+                        {user && user.role === "admin" && (
+                            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-500 outline outline-2 outline-white dark:outline-zinc-950" title="Admin">
+                                <span className="text-[10px]">👑</span>
+                            </span>
+                        )}
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col flex-1 min-w-0">
                         {user ? (
                             <>
-                                <span className="font-semibold text-sm leading-none">{user.name}</span>
-                                <span className="text-xs text-muted-foreground">{user.email}</span>
+                                <span className="font-semibold text-[15px] leading-tight text-zinc-900 dark:text-zinc-100 truncate">{user.name}</span>
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{user.email}</span>
+                                {user.role !== "admin" && (
+                                    <div className="flex items-center gap-1.5 mt-2" title={`Login Streak: ${user.loginStreak || 0}/7 Days`}>
+                                        {[...Array(7)].map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className={`h-1.5 rounded-full transition-colors duration-500 ${i < (user.loginStreak || 0)
+                                                    ? "w-3 bg-gradient-to-r from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500 shadow-sm shadow-orange-500/20"
+                                                    : "w-1.5 bg-zinc-200 dark:bg-zinc-800"
+                                                    }`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </>
                         ) : (
                             <>
-                                <span className="font-semibold text-sm leading-none">Guest</span>
-                                <Link to="/login" className="text-xs text-blue-500 hover:underline">Sign in</Link>
+                                <span className="font-semibold text-sm leading-none text-zinc-900 dark:text-zinc-100">Guest User</span>
+                                <Link to="/login" className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mt-1 hover:underline transition-colors w-max">
+                                    Sign in to Shopr
+                                </Link>
                             </>
                         )}
                     </div>
+                    {user && user.role !== "admin" && coins !== null && (
+                        <Link to="/coins" className="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-all text-xs font-bold shrink-0 cursor-pointer border border-orange-100 dark:border-orange-500/20 group">
+                            <Coins className="h-4 w-4 mb-0.5 group-hover:scale-110 transition-transform text-orange-500" />
+                            <span className="font-semibold">{coins}</span>
+                        </Link>
+                    )}
                 </div>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="px-3 py-4 gap-6">
                 {/* Main Navigation Group */}
                 <SidebarGroup>
-                    <SidebarGroupLabel>Menu</SidebarGroupLabel>
+                    <SidebarGroupLabel className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-3 pb-2">Menu</SidebarGroupLabel>
                     <SidebarGroupContent>
-                        <SidebarMenu>
+                        <SidebarMenu className="gap-1">
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild isActive={location.pathname === "/"}>
-                                    <Link to="/">🏠 {user?.role === "admin" ? "Dashboard" : "Home"}</Link>
+                                <SidebarMenuButton asChild isActive={location.pathname === "/"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 dark:data-[active=true]:bg-indigo-500/10 dark:data-[active=true]:text-indigo-400 transition-colors">
+                                    <Link to="/" className="flex items-center gap-3">
+                                        <Home className="h-4 w-4" />
+                                        <span className="font-medium">{user?.role === "admin" ? "Dashboard" : "Home"}</span>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             {user?.role === "admin" ? (
                                 <>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton asChild>
-                                            <Link to="/admin/users">👥 Users</Link>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/admin/users"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 dark:data-[active=true]:bg-indigo-500/10 dark:data-[active=true]:text-indigo-400 transition-colors">
+                                            <Link to="/admin/users" className="flex items-center gap-3">
+                                                <Users className="h-4 w-4" />
+                                                <span className="font-medium">Users Management</span>
+                                            </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>
                             ) : (
                                 <>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton tooltip="Check your orders">
-                                            <span className="flex items-center gap-2">📦 My Orders</span>
+                                        <SidebarMenuButton tooltip="Check your orders" className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <Package className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                                                <span className="font-medium text-zinc-700 dark:text-zinc-200">My Orders</span>
+                                            </div>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton asChild isActive={location.pathname === "/wishlist"}>
-                                            <Link to="/wishlist">❤️ Wishlist</Link>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/wishlist"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 data-[active=true]:bg-rose-50 data-[active=true]:text-rose-600 dark:data-[active=true]:bg-rose-500/10 dark:data-[active=true]:text-rose-400 transition-colors">
+                                            <Link to="/wishlist" className="flex items-center gap-3">
+                                                <Heart className="h-4 w-4" />
+                                                <span className="font-medium">Wishlist</span>
+                                            </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>
@@ -101,21 +163,25 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                <SidebarSeparator />
-
                 {/* Explore Group */}
                 <SidebarGroup>
-                    <SidebarGroupLabel>Explore</SidebarGroupLabel>
+                    <SidebarGroupLabel className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-3 pb-2">Explore</SidebarGroupLabel>
                     <SidebarGroupContent>
-                        <SidebarMenu>
+                        <SidebarMenu className="gap-1">
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild isActive={location.pathname === "/about"}>
-                                    <Link to="/about">ℹ️ About Us</Link>
+                                <SidebarMenuButton asChild isActive={location.pathname === "/about"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-colors">
+                                    <Link to="/about" className="flex items-center gap-3">
+                                        <Info className="h-4 w-4 text-zinc-500" />
+                                        <span className="font-medium text-zinc-700 dark:text-zinc-300">About Us</span>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild isActive={location.pathname === "/contact"}>
-                                    <Link to="/contact">📞 Contact</Link>
+                                <SidebarMenuButton asChild isActive={location.pathname === "/contact"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-colors">
+                                    <Link to="/contact" className="flex items-center gap-3">
+                                        <Phone className="h-4 w-4 text-zinc-500" />
+                                        <span className="font-medium text-zinc-700 dark:text-zinc-300">Contact</span>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
@@ -123,25 +189,18 @@ export function AppSidebar() {
                 </SidebarGroup>
 
                 {/* Account Group */}
-                <SidebarGroup>
-                    <SidebarGroupLabel>Account</SidebarGroupLabel>
+                <SidebarGroup className="mt-auto pt-8">
+                    <SidebarGroupLabel className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-3 pb-2">Account</SidebarGroupLabel>
                     <SidebarGroupContent>
-                        <SidebarMenu>
+                        <SidebarMenu className="gap-1">
                             {user && (
                                 <>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton>
-                                            <span className="text-xs text-muted-foreground">📍 {user.city}, {user.country}</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton>
-                                            <span className="text-xs text-muted-foreground">📞 {user.phone}</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton asChild isActive={location.pathname === "/account"}>
-                                            <Link to="/account">⚙️ Account Settings</Link>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/account"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-colors">
+                                            <Link to="/account" className="flex items-center gap-3">
+                                                <Settings className="h-4 w-4 text-zinc-500" />
+                                                <span className="font-medium text-zinc-700 dark:text-zinc-300">Account Settings</span>
+                                            </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>
@@ -150,27 +209,28 @@ export function AppSidebar() {
                                 {user ? (
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <SidebarMenuButton className="text-red-500 hover:text-red-600">
-                                                <LogOut className="h-4 w-4 mr-1" /> Logout
+                                            <SidebarMenuButton className="rounded-lg h-10 mt-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-300 transition-colors cursor-pointer">
+                                                <LogOut className="h-4 w-4 mr-1" />
+                                                <span className="font-bold">Log Out</span>
                                             </SidebarMenuButton>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
+                                        <AlertDialogContent className="border-none shadow-2xl bg-white dark:bg-zinc-950 sm:rounded-2xl">
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    You will need to sign in again to access your account.
+                                                <AlertDialogTitle className="text-xl font-bold">Sign out of Shopr?</AlertDialogTitle>
+                                                <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400">
+                                                    You will need to sign in again to access your account, orders, and wishlist.
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleLogout}>Log Out</AlertDialogAction>
+                                            <AlertDialogFooter className="mt-6">
+                                                <AlertDialogCancel className="border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl">Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleLogout} className="bg-red-600 outline-none border-0 hover:bg-red-700 text-white rounded-xl shadow-lg shadow-red-600/20">Sign Out</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
                                 ) : (
-                                    <SidebarMenuButton asChild>
-                                        <Link to="/login" className="text-blue-500 hover:text-blue-600">
-                                            🔑 Sign In
+                                    <SidebarMenuButton asChild className="rounded-lg h-10 mt-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
+                                        <Link to="/login" className="flex justify-center w-full">
+                                            <span className="font-bold">Sign In</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 )}
@@ -179,12 +239,6 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-
-            <SidebarFooter className="border-t border-sidebar-border p-4">
-                <div className="text-[10px] text-center text-muted-foreground uppercase tracking-widest">
-                    v1.0.4 - 2026 Build
-                </div>
-            </SidebarFooter>
         </Sidebar>
     );
 }
@@ -196,7 +250,7 @@ export function AccountButton() {
         <button onClick={toggleSidebar} className="fixed bottom-4 left-2 z-50">
             <CircleUser
                 size={40}
-                className="bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 rounded-full p-2 transition-all duration-200 shadow-none"
+                className="bg-white text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/10 rounded-full p-2.5 transition-all duration-300 shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-zinc-100 dark:border-zinc-800"
             />
         </button>
     );

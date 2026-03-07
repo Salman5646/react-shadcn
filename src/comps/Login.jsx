@@ -24,6 +24,8 @@ export function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
+
+
     const handleLogin = async (e) => {
         e.preventDefault();
 
@@ -52,6 +54,10 @@ export function Login() {
                 saveUser(data.user);
                 await mergeGuestCart();
                 toast.success("Login successful!");
+                if (data.loginReward) {
+                    window.dispatchEvent(new CustomEvent("loginReward", { detail: data.loginReward }));
+                    window.dispatchEvent(new Event("coinsUpdate"));
+                }
                 navigate("/");
             } else {
                 toast.error(data.message || "Login failed");
@@ -150,6 +156,10 @@ export function Login() {
                                             navigate("/complete-profile");
                                         } else {
                                             toast.success("Login successful!");
+                                            if (data.loginReward) {
+                                                window.dispatchEvent(new CustomEvent("loginReward", { detail: data.loginReward }));
+                                                window.dispatchEvent(new Event("coinsUpdate"));
+                                            }
                                             navigate("/");
                                         }
                                     } else {
