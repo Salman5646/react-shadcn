@@ -22,6 +22,8 @@ import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { TermsOfService } from "./pages/TermsOfService";
 import { CoinsInfo } from "./pages/CoinsInfo";
 import { DailyRewardModal } from "./comps/DailyRewardModal";
+import Orders from "./pages/Orders";
+import CheckoutConfirmation from "./pages/CheckoutConfirmation";
 
 export function App() {
 
@@ -44,6 +46,8 @@ export function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/coins" element={<CoinsInfo />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/checkout" element={<CheckoutConfirmation />} />
       </Routes>
       <Toaster
         richColors

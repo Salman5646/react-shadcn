@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom" // Link is removed as BackButton replaces it
 import { toast } from "sonner"
 import { saveUser } from "@/lib/cookieUtils"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,8 @@ import {
     CardTitle,
     CardDescription,
 } from "@/components/ui/card"
-import { ChevronLeft, Eye, EyeOff, Mail, ShieldCheck, KeyRound } from "lucide-react"
+import { Eye, EyeOff, Mail, ShieldCheck, KeyRound } from "lucide-react" // ChevronLeft removed
+import { BackButton } from "../comps/BackButton" // New import
 
 // ── Step indicator ──────────────────────────────────────────────────────────
 function StepIndicator({ current }) {
@@ -156,13 +157,7 @@ export function ForgotPassword() {
     return (
         <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
             {/* Back button */}
-            <Link
-                to="/login"
-                className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-sm"
-            >
-                <ChevronLeft className="h-5 w-5" />
-                Back to Login
-            </Link>
+            <BackButton to="/login" label="Back to Login" className="absolute top-4 left-4 md:top-8 md:left-8" />
 
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center pb-2">

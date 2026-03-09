@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState } from "react"
@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { saveUser } from "@/lib/cookieUtils"
 import { mergeGuestCart } from "@/lib/cartService"
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { BackButton } from "./BackButton";
 
 export function Login() {
     const [email, setEmail] = useState("");
@@ -73,10 +74,7 @@ export function Login() {
 
     return (
         <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-            <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-foreground hover:text-muted-foreground transition-colors">
-                <ChevronLeft className="h-6 w-6" />
-                <span className="sr-only">Back to Home</span>
-            </Link>
+            <BackButton to="/" className="absolute top-4 left-4 md:top-8 md:left-8" />
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle className="text-center text-2xl m-2">Login to your account</CardTitle>

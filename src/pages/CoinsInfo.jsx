@@ -2,22 +2,36 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "../comps/AppSidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Coins, Flame, Gift, ShoppingCart, Info, ChevronLeft } from "lucide-react"
+import { Coins, Flame, Gift, ShoppingCart, Info, Check, Sparkles } from "lucide-react"
 import { Link } from "react-router-dom"
+import { BackButton } from "../comps/BackButton";
+import { useState, useEffect } from "react"
+import { verifySession } from "@/lib/cookieUtils"
 
 export function CoinsInfo() {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        verifySession().then(verified => setUser(verified));
+
+        const handleStorageChange = () => {
+            verifySession().then(verified => setUser(verified));
+        };
+        window.addEventListener("storage", handleStorageChange);
+        window.addEventListener("userChange", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+            window.removeEventListener("userChange", handleStorageChange);
+        };
+    }, []);
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar />
             <SidebarInset>
                 <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 p-4 md:p-8 transition-colors duration-300">
-                    <div className="max-w-4xl mx-auto space-y-8">
-                        {/* Navigation */}
-                        <Link to="/" className="inline-flex items-center gap-2 mb-4 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
-                            <ChevronLeft className="h-5 w-5" />
-                            <span>Keep Shopping</span>
-                        </Link>
-
+                    {/* Navigation */}
+                    <BackButton to="/" label="Keep Shopping" className="mb-6" />
+                    <div className="max-w-4xl mx-auto space-y-8 mt-2 md:mt-4">
                         {/* Header Section */}
                         <div className="text-center space-y-4 py-8">
                             <div className="inline-flex items-center justify-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-full mb-4 ring-8 ring-yellow-50 dark:ring-yellow-900/10">
@@ -57,10 +71,36 @@ export function CoinsInfo() {
                                     <CardTitle>Daily Login Streak</CardTitle>
                                     <CardDescription>Consistency pays off</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <p className="text-slate-600 dark:text-zinc-300">
+                                <CardContent className="space-y-4">
+                                    <p className="text-slate-600 dark:text-zinc-300 relative z-10">
                                         Log in every day to earn <strong className="text-orange-600 dark:text-orange-400">50 coins</strong> daily. Hit a 7-day log in streak to unlock a <strong className="text-orange-600 dark:text-orange-400">100 coin bonus</strong>!
                                     </p>
+
+                                    {/* Embedded 7-Day Tracker */}
+                                    {user && (
+                                        <div className="relative z-10 bg-white/50 dark:bg-zinc-950/50 p-3 rounded-xl border border-orange-100 dark:border-orange-500/20 backdrop-blur-sm mt-4">
+                                            <div className="flex justify-between items-center">
+                                                {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                                                    const streak = user.loginStreak || 0;
+                                                    const isPast = day <= streak;
+
+                                                    return (
+                                                        <div key={day} className="flex flex-col items-center gap-1.5">
+                                                            <div className={`relative flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold transition-all duration-500 ${isPast ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/40' :
+                                                                day === 7 ? 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500' :
+                                                                    'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
+                                                                }`}>
+                                                                {isPast ? <Check className="w-3 h-3" /> : day === 7 ? <Gift className="w-3 h-3" /> : day}
+                                                            </div>
+                                                            <span className={`text-[8px] uppercase font-bold tracking-wider ${isPast ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                                                D{day}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 

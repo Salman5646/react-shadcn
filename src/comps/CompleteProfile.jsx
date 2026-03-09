@@ -7,12 +7,12 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft } from "lucide-react"
-import { Link, useNavigate } from "react-router-dom"
-import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { countryCityData } from "@/data/countryCities"
 import { saveUser, getUser } from "@/lib/cookieUtils"
+import { BackButton } from "./BackButton";
 
 export function CompleteProfile() {
     const navigate = useNavigate();
@@ -89,10 +89,7 @@ export function CompleteProfile() {
 
     return (
         <div className="relative flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-            <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 text-white hover:text-gray-300 transition-colors">
-                <ChevronLeft className="h-6 w-6" />
-                <span className="sr-only">Back to Home</span>
-            </Link>
+            <BackButton to="/" className="absolute top-4 left-4 md:top-8 md:left-8" />
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle className="text-center text-2xl m-2">Complete your profile</CardTitle>

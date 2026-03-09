@@ -10,6 +10,7 @@ import Product from "./models/Product.js";
 import User from "./models/User.js";
 import Cart from "./models/Cart.js";
 import Notification from "./models/Notification.js";
+import Order from "./models/Order.js";
 
 dotenv.config();
 
@@ -114,6 +115,16 @@ app.post("/api/products/:id/reviews", verifyToken, async (req, res) => {
 
         const userIdString = req.verifiedUser.id.toString();
         const mongoUserId = new mongoose.Types.ObjectId(userIdString);
+
+        // Verify that the user has actually purchased this product
+        const hasPurchased = await Order.findOne({
+            userId: mongoUserId,
+            "items.productId": productId
+        });
+
+        if (!hasPurchased) {
+            return res.status(403).json({ message: "You can only review products you have completely purchased." });
+        }
 
 
         // Check if user already reviewed this product
@@ -479,6 +490,7 @@ app.get("/api/me", async (req, res) => {
             city: user.city,
             country: user.country,
             coins: user.coins,
+            loginStreak: user.loginStreak || 0,
         }));
 
         // If a reward was granted, issue a new cookie so the frontend sees the new coin balance
@@ -616,6 +628,23 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
             });
         }
 
+        // Create Order Document
+        const orderItems = cart.items.map(item => ({
+            productId: item.productId._id,
+            product_name: item.productId.product_name,
+            product_image: item.productId.product_image,
+            price: item.productId.price,
+            quantity: item.quantity || 1
+        }));
+
+        const newOrder = await Order.create({
+            userId,
+            items: orderItems,
+            totalAmount: totalRounded,
+            paymentMethod: "Shopr Coins",
+            status: "Processing"
+        });
+
         // Deduct coins and clear cart
         user.coins = Math.round(((user.coins ?? 0) - totalRounded) * 100) / 100;
         await user.save();
@@ -636,6 +665,17 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
             coins: user.coins,
             spent: totalRounded,
         });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// GET /api/orders — fetch user's order history
+app.get("/api/orders", verifyToken, async (req, res) => {
+    try {
+        const orders = await Order.find({ userId: req.verifiedUser.id })
+            .sort({ createdAt: -1 }); // Newest first
+        res.json(orders);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

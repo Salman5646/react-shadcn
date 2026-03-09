@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     address: { type: String, trim: true },
     city: { type: String, trim: true },
     country: { type: String, default: "India", trim: true },
-    coins: { type: Number, default: 100 },
+    coins: { type: Number, default: 1000 },
     loginStreak: { type: Number, default: 0 },
     lastLoginReward: { type: Date },
     otp: { type: String },

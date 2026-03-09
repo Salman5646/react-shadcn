@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, Save, User, MapPin } from "lucide-react"
+import { Save, User, MapPin } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
@@ -17,6 +17,7 @@ import { saveUser, getUser } from "@/lib/cookieUtils"
 import { verifySession } from "@/lib/cookieUtils"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "../comps/AppSidebar"
+import { BackButton } from "../comps/BackButton";
 
 export function AccountSettings() {
     const navigate = useNavigate();
@@ -115,10 +116,7 @@ export function AccountSettings() {
             <AppSidebar />
             <SidebarInset>
                 <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white p-6 transition-colors duration-300">
-                    <Link to="/" className="inline-flex items-center gap-2 mb-8 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
-                        <ChevronLeft className="h-5 w-5" />
-                        <span>Home</span>
-                    </Link>
+                    <BackButton to="/" label="Home" className="mb-6" />
                     <div className="max-w-2xl mx-auto">
                         <div className="mb-8">
                             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Account Settings</h1>

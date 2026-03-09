@@ -21,7 +21,7 @@ export function DailyRewardModal() {
 
     if (!rewardData) return null;
 
-    const { reward, streak, isDay7 } = rewardData;
+    const { reward, streak, isDay7, isViewing } = rewardData;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -44,10 +44,10 @@ export function DailyRewardModal() {
                     </div>
 
                     <DialogTitle className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                        {isDay7 ? "Day 7 Bonus Reached! 🎉" : "Daily Check-in Complete!"}
+                        {isViewing ? "Daily Login Progress" : (isDay7 ? "Day 7 Bonus Reached! 🎉" : "Daily Check-in Complete!")}
                     </DialogTitle>
                     <DialogDescription className="text-base font-medium text-amber-600 dark:text-amber-400 mt-2">
-                        You earned +{reward} Shopr Coins!
+                        {isViewing ? "Keep logging in to earn more coins!" : `You earned +${reward} Shopr Coins!`}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -55,15 +55,15 @@ export function DailyRewardModal() {
                     {/* The 7-day visual tracker */}
                     <div className="flex justify-between items-center bg-white dark:bg-zinc-900/50 p-4 rounded-2xl shadow-inner border border-zinc-100 dark:border-zinc-800">
                         {[1, 2, 3, 4, 5, 6, 7].map((day) => {
-                            const isPast = day < streak;
-                            const isToday = day === streak;
+                            const isPast = isViewing ? day <= streak : day < streak;
+                            const isToday = isViewing ? false : day === streak;
                             const isFuture = day > streak;
 
                             return (
                                 <div key={day} className="flex flex-col items-center gap-2">
                                     <div className={`relative flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-500 ${isPast ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
-                                            isToday ? 'bg-amber-500 text-white shadow-md shadow-amber-500/40 ring-4 ring-amber-100 dark:ring-amber-900/30 scale-110' :
-                                                'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
+                                        isToday ? 'bg-amber-500 text-white shadow-md shadow-amber-500/40 ring-4 ring-amber-100 dark:ring-amber-900/30 scale-110' :
+                                            'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500'
                                         }`}>
                                         {isPast ? <Check className="w-4 h-4" /> : day === 7 ? <Gift className="w-4 h-4" /> : day}
 
@@ -72,7 +72,7 @@ export function DailyRewardModal() {
                                             <Sparkles className="absolute -top-3 -right-3 w-4 h-4 text-amber-500 animate-pulse" />
                                         )}
                                     </div>
-                                    <span className={`text-[10px] font-medium ${isToday ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                    <span className={`text-[10px] font-medium ${(isPast || isToday) ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
                                         Day {day}
                                     </span>
                                 </div>

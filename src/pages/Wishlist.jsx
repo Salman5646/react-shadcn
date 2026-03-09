@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { Cards } from "../comps/Cards"
-import { ChevronLeft, Heart } from "lucide-react"
+import { Heart } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
+import { BackButton } from "../comps/BackButton";
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "../comps/AppSidebar"
@@ -49,10 +50,7 @@ export default function Wishlist() {
             <AppSidebar />
             <SidebarInset>
                 <div className="min-h-screen bg-white dark:bg-slate-900 text-black dark:text-white p-6 relative transition-colors duration-300">
-                    <Link to="/" className="inline-flex items-center gap-2 mb-8 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
-                        <ChevronLeft className="h-5 w-5" />
-                        <span>Back to Shop</span>
-                    </Link>
+                    <BackButton to="/" label="Back to Shop" className="mb-6" />
 
                     <div className="container mx-auto max-w-5xl">
                         <div className="flex flex-col items-center mb-12">

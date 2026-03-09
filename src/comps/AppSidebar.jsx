@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { CircleUser, LogOut, Coins, Home, Package, Heart, Info, Phone, Settings, MapPin, Users } from "lucide-react";
+import { CircleUser, LogOut, Coins, Home, Package, Heart, Info, Phone, Settings, MapPin, Users, PanelLeftClose, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { verifySession, serverLogout } from "@/lib/cookieUtils";
 import { useSidebar, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator } from "@/components/ui/sidebar";
@@ -19,6 +19,34 @@ export function AppSidebar() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const { open, setOpen, isMobile } = useSidebar();
+
+    // Close the desktop offcanvas sidebar when clicking outside of it
+    useEffect(() => {
+        // Mobile uses Sheet which already has built-in backdrop click handling, so we skip it.
+        // We also only care if the sidebar is currently open.
+        if (isMobile || !open) return;
+
+        const handleClickOutside = (e) => {
+            // Check if the click happened outside the sidebar wrapper and trigger
+            const clickedInsideSidebar = e.target.closest('[data-sidebar="sidebar"]');
+            const clickedTrigger = e.target.closest('[data-sidebar="trigger"]') || e.target.closest('button[class*="z-50"]');
+
+            if (!clickedInsideSidebar && !clickedTrigger) {
+                setOpen(false);
+            }
+        };
+
+        // Add small delay to prevent the trigger itself from instantly triggering an outside click event
+        const timer = setTimeout(() => {
+            document.addEventListener("mousedown", handleClickOutside);
+        }, 50);
+
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [open, isMobile, setOpen]);
 
     useEffect(() => {
         verifySession().then(verified => setUser(verified));
@@ -82,19 +110,6 @@ export function AppSidebar() {
                             <>
                                 <span className="font-semibold text-[15px] leading-tight text-zinc-900 dark:text-zinc-100 truncate">{user.name}</span>
                                 <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{user.email}</span>
-                                {user.role !== "admin" && (
-                                    <div className="flex items-center gap-1.5 mt-2" title={`Login Streak: ${user.loginStreak || 0}/7 Days`}>
-                                        {[...Array(7)].map((_, i) => (
-                                            <div
-                                                key={i}
-                                                className={`h-1.5 rounded-full transition-colors duration-500 ${i < (user.loginStreak || 0)
-                                                    ? "w-3 bg-gradient-to-r from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500 shadow-sm shadow-orange-500/20"
-                                                    : "w-1.5 bg-zinc-200 dark:bg-zinc-800"
-                                                    }`}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
                             </>
                         ) : (
                             <>
@@ -106,8 +121,8 @@ export function AppSidebar() {
                         )}
                     </div>
                     {user && user.role !== "admin" && coins !== null && (
-                        <Link to="/coins" className="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-all text-xs font-bold shrink-0 cursor-pointer border border-orange-100 dark:border-orange-500/20 group">
-                            <Coins className="h-4 w-4 mb-0.5 group-hover:scale-110 transition-transform text-orange-500" />
+                        <Link to="/coins" className="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-500/20 transition-all text-xs font-bold shrink-0 cursor-pointer border border-yellow-100 dark:border-yellow-500/20 group">
+                            <Coins className="h-4 w-4 mb-0.5 group-hover:scale-110 transition-transform text-yellow-500" />
                             <span className="font-semibold">{coins}</span>
                         </Link>
                     )}
@@ -142,11 +157,11 @@ export function AppSidebar() {
                             ) : (
                                 <>
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton tooltip="Check your orders" className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer">
-                                            <div className="flex items-center gap-3 w-full">
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/orders"} tooltip="Check your orders" className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 dark:data-[active=true]:bg-indigo-500/10 dark:data-[active=true]:text-indigo-400 transition-colors cursor-pointer">
+                                            <Link to="/orders" className="flex items-center gap-3 w-full">
                                                 <Package className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                                                 <span className="font-medium text-zinc-700 dark:text-zinc-200">My Orders</span>
-                                            </div>
+                                            </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                     <SidebarMenuItem>
@@ -155,6 +170,20 @@ export function AppSidebar() {
                                                 <Heart className="h-4 w-4" />
                                                 <span className="font-medium">Wishlist</span>
                                             </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton
+                                            onClick={() => {
+                                                if (setOpen) setOpen(false);
+                                                window.dispatchEvent(new CustomEvent('loginReward', { detail: { reward: 0, streak: user?.loginStreak || 0, isDay7: false, isViewing: true } }));
+                                            }}
+                                            className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer"
+                                        >
+                                            <div className="flex items-center gap-3 w-full">
+                                                <Coins className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                                                <span className="font-medium text-zinc-700 dark:text-zinc-200">Daily Rewards</span>
+                                            </div>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </>
@@ -239,15 +268,27 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-        </Sidebar>
+            <SidebarFooter className="p-4 border-t border-zinc-100 dark:border-zinc-800/50">
+                <button
+                    onClick={() => isMobile ? setOpenMobile(false) : setOpen(false)}
+                    className="flex items-center justify-center w-full py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900/50 hover:bg-rose-100 dark:hover:bg-rose-500/10 text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors group"
+                >
+                    <X className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                </button>
+            </SidebarFooter>
+        </Sidebar >
     );
 }
 
 export function AccountButton() {
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, state, isMobile, openMobile } = useSidebar();
+
+    // Hide the button if the sidebar is visibly open
+    const isOpen = isMobile ? openMobile : state === "expanded";
+    if (isOpen) return null;
 
     return (
-        <button onClick={toggleSidebar} className="fixed bottom-4 left-2 z-50">
+        <button onClick={toggleSidebar} className="fixed bottom-4 left-2 z-50 animate-in fade-in zoom-in duration-300">
             <CircleUser
                 size={40}
                 className="bg-white text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-500/10 rounded-full p-2.5 transition-all duration-300 shadow-xl shadow-zinc-200/50 dark:shadow-black/50 border border-zinc-100 dark:border-zinc-800"

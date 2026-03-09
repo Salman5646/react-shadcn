@@ -3,8 +3,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Cards } from "./Cards"
-import { ChevronLeft, Trash, Coins } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Trash, Coins } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import { BackButton } from "./BackButton";
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "./AppSidebar"
@@ -23,6 +24,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 export default function Cart() {
+    const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
     const [user, setUser] = useState(null);
     const [coins, setCoins] = useState(null);
@@ -98,29 +100,8 @@ export default function Cart() {
             toast.error("Please login to checkout");
             return;
         }
-        setCheckingOut(true);
-        try {
-            const res = await fetch("/api/checkout", {
-                method: "POST",
-                credentials: "include",
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setCartItems([]);
-                setCoins(data.coins);
-                toast.success(data.message, {
-                    description: `Spent ${data.spent} coins. Remaining: ${data.coins} coins.`,
-                });
-                window.dispatchEvent(new Event("cartUpdate"));
-                window.dispatchEvent(new Event("coinsUpdate"));
-            } else {
-                toast.error(data.message);
-            }
-        } catch (err) {
-            toast.error("Checkout failed. Please try again.");
-        } finally {
-            setCheckingOut(false);
-        }
+        // Instead of calling /api/checkout directly, navigate to the confirmation page
+        navigate("/checkout");
     };
 
     const hasEnoughCoins = coins !== null && coins >= Math.round(total * 100) / 100;
@@ -131,10 +112,7 @@ export default function Cart() {
             <SidebarInset>
                 <div className="min-h-screen bg-white dark:bg-slate-900 text-black dark:text-white p-6 relative transition-colors duration-300">
                     {/* Navigation */}
-                    <Link to="/" className="inline-flex items-center gap-2 mb-8 text-gray-500 dark:text-zinc-400 hover:text-black dark:hover:text-white transition-colors">
-                        <ChevronLeft className="h-5 w-5" />
-                        <span>Continue Shopping</span>
-                    </Link>
+                    <BackButton to="/" label="Continue Shopping" className="mb-6" />
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Trash className="absolute top-6 right-6 cursor-pointer hover:text-red-500 transition-colors" />
@@ -224,13 +202,13 @@ export default function Cart() {
                                     <div className="p-4 bg-gray-100 dark:bg-zinc-900">
                                         <Button
                                             onClick={handleCheckout}
-                                            disabled={checkingOut || !hasEnoughCoins}
+                                            disabled={!hasEnoughCoins}
                                             className={`w-full py-6 text-lg font-bold rounded-lg shadow-xl ${hasEnoughCoins
                                                 ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-zinc-200"
                                                 : "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
                                                 }`}
                                         >
-                                            {checkingOut ? "Processing..." : !hasEnoughCoins ? `Not Enough Coins (Need ${Math.round(total * 100) / 100})` : `Pay ${total.toFixed(2)} Coins`}
+                                            {!hasEnoughCoins ? `Not Enough Coins (Need ${Math.round(total * 100) / 100})` : `Proceed to Checkout`}
                                         </Button>
                                     </div>
                                 </div>

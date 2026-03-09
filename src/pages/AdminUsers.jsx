@@ -16,8 +16,9 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { ChevronLeft, Trash2, ShieldCheck, ShieldOff, RefreshCw, Users } from "lucide-react"
+import { Trash2, ShieldCheck, ShieldOff, RefreshCw, Users } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
+import { BackButton } from "../comps/BackButton";
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { Navbar } from "../comps/Navbar"
@@ -108,10 +109,8 @@ export function AdminUsers() {
         <>
             <Navbar />
             <div className="p-4 md:p-8 flex-1 bg-white dark:bg-black min-h-screen transition-colors duration-300">
+                <BackButton to="/" label="Back to Dashboard" className="mb-6" />
                 <div className="flex items-center gap-4 mb-6">
-                    <Link to="/" className="text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                        <ChevronLeft className="h-6 w-6" />
-                    </Link>
                     <h1 className="text-2xl font-bold text-black dark:text-white flex items-center gap-2">
                         Users
                     </h1>

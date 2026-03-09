@@ -14,12 +14,13 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Star, StarHalf, ShoppingCart, ArrowLeft, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus, Heart } from "lucide-react";
+import { Star, StarHalf, ShoppingCart, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus, Heart, Package } from "lucide-react";
 import * as cartService from "@/lib/cartService";
 import * as wishlistService from "@/lib/wishlistService";
 import { verifySession } from "@/lib/cookieUtils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { BackButton } from "../comps/BackButton";
 
 
 const ProductPage = () => {
@@ -34,6 +35,7 @@ const ProductPage = () => {
     const [commentValue, setCommentValue] = useState("");
     const [cartItems, setCartItems] = useState([]);
     const [wishlistItems, setWishlistItems] = useState([]);
+    const [hasPurchased, setHasPurchased] = useState(false);
 
     useEffect(() => {
         const loadUserAndCart = async () => {
@@ -108,6 +110,23 @@ const ProductPage = () => {
             }
         }
     }, [user, product?.reviews]);
+
+    useEffect(() => {
+        const checkPurchase = async () => {
+            if (!user) return;
+            try {
+                const res = await fetch("/api/orders", { credentials: "include" });
+                if (res.ok) {
+                    const orders = await res.json();
+                    const purchased = orders.some(order =>
+                        order.items.some(item => (item.productId?._id || item.productId) === id)
+                    );
+                    setHasPurchased(purchased);
+                }
+            } catch (err) { }
+        };
+        checkPurchase();
+    }, [user, id]);
 
     const handleAddToCart = async () => {
         if (!product) return;
@@ -239,18 +258,13 @@ const ProductPage = () => {
         <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 selection:bg-blue-100 dark:selection:bg-blue-900/40">
             <Navbar />
 
-            <main className="container mx-auto px-4 md:px-8 pt-12 pb-20">
+            <div className="px-4 md:px-8 pt-6">
+                <BackButton to="/" label="Back to Shop" className="mb-6" />
+            </div>
+
+            <main className="container mx-auto px-4 md:px-8 pb-20 mt-2 md:mt-4">
                 {/* Navigation Header */}
-                <div className="flex items-center gap-4 mb-10 overflow-hidden">
-                    <Button
-                        variant="ghost"
-                        className="group flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-all"
-                        onClick={() => navigate(-1)}
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Back to Shop
-                    </Button>
-                    <div className="h-4 w-px bg-slate-200 dark:bg-slate-800"></div>
+                <div className="flex items-center gap-4 mb-8 overflow-hidden">
                     <div className="text-sm text-slate-400 font-medium truncate">
                         Home / {product.category} / <span className="text-slate-600 dark:text-slate-200">{product.product_name}</span>
                     </div>
@@ -438,6 +452,14 @@ const ProductPage = () => {
                                         </div>
                                         <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3">Admin Mode</h3>
                                         <p className="text-slate-500 dark:text-slate-400 text-sm px-4 leading-relaxed">Reviews are a customer feature. You're viewing this page as an administrator.</p>
+                                    </div>
+                                ) : user && !hasPurchased ? (
+                                    <div className="p-10 rounded-[2rem] bg-slate-50 dark:bg-slate-900/30 border-2 border-dashed border-slate-200 dark:border-slate-800 text-center">
+                                        <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6 text-slate-400">
+                                            <Package className="w-8 h-8" />
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3">Verified Buyers Only</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm px-4 leading-relaxed">You must purchase this product before you can write a review.</p>
                                     </div>
                                 ) : user ? (
                                     <div className="p-8 rounded-[2rem] bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
