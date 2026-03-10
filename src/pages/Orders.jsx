@@ -53,7 +53,7 @@ export default function Orders() {
     };
 
     const handleCancelOrder = async (orderId) => {
-        if (!confirm("Are you sure you want to cancel this order?")) return;
+        if (!window.confirm("Are you sure you want to cancel this order?")) return;
         try {
             const res = await fetch(`/api/orders/${orderId}/cancel`, {
                 method: "PUT",
@@ -72,7 +72,7 @@ export default function Orders() {
     };
 
     const handleReturnOrder = async (orderId) => {
-        if (!confirm("Are you sure you want to return this order? You have 7 days from delivery.")) return;
+        if (!window.confirm("Are you sure you want to return this order? You have 7 days from delivery.")) return;
         try {
             const res = await fetch(`/api/orders/${orderId}/return`, {
                 method: "PUT",
