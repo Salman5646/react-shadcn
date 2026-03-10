@@ -4,11 +4,23 @@ import { Package, Loader2, Calendar, CreditCard, ChevronRight, Coins, RefreshCcw
 import { toast } from "sonner";
 import { verifySession } from "@/lib/cookieUtils";
 import { BackButton } from "../comps/BackButton";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Orders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
+    const [returnReason, setReturnReason] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -53,7 +65,6 @@ export default function Orders() {
     };
 
     const handleCancelOrder = async (orderId) => {
-        if (!window.confirm("Are you sure you want to cancel this order?")) return;
         try {
             const res = await fetch(`/api/orders/${orderId}/cancel`, {
                 method: "PUT",
@@ -72,15 +83,17 @@ export default function Orders() {
     };
 
     const handleReturnOrder = async (orderId) => {
-        if (!window.confirm("Are you sure you want to return this order? You have 7 days from delivery.")) return;
         try {
             const res = await fetch(`/api/orders/${orderId}/return`, {
                 method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ returnReason }),
                 credentials: "include"
             });
             const data = await res.json();
             if (res.ok) {
                 toast.success(data.message);
+                setReturnReason(""); // clear after submission
                 fetchOrders(true);
             } else {
                 toast.error(data.message || "Failed to initiate return");
@@ -210,12 +223,29 @@ export default function Orders() {
                                 {/* Order Actions Footer */}
                                 <div className="p-4 sm:px-8 border-t border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-950/30 flex justify-end gap-3">
                                     {order.status === "Processing" && (
-                                        <button
-                                            onClick={() => handleCancelOrder(order._id)}
-                                            className="px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1.5"
-                                        >
-                                            <XCircle className="w-4 h-4" /> Cancel Order
-                                        </button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <button
+                                                    className="px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                                >
+                                                    <XCircle className="w-4 h-4" /> Cancel Order
+                                                </button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to cancel this order? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleCancelOrder(order._id)} className="bg-red-600 hover:bg-red-700 text-white">
+                                                        Yes, Cancel
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
                                     {order.status === "Delivered" && order.deliveredAt && (
                                         (() => {
@@ -224,12 +254,41 @@ export default function Orders() {
 
                                             if (isReturnable) {
                                                 return (
-                                                    <button
-                                                        onClick={() => handleReturnOrder(order._id)}
-                                                        className="px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 rounded-lg transition-colors flex items-center gap-1.5"
-                                                    >
-                                                        <RefreshCcw className="w-4 h-4" /> Return Item
-                                                    </button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <button
+                                                                className="px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                                            >
+                                                                <RefreshCcw className="w-4 h-4" /> Return Item
+                                                            </button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Return Item</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you want to return this order? You have 7 days from delivery to initiate a return.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <div className="py-2">
+                                                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                                    Reason for Return
+                                                                </label>
+                                                                <textarea
+                                                                    value={returnReason}
+                                                                    onChange={(e) => setReturnReason(e.target.value)}
+                                                                    placeholder="E.g., Item was defective, wrong size..."
+                                                                    rows={3}
+                                                                    className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-100"
+                                                                />
+                                                            </div>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel onClick={() => setReturnReason("")}>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleReturnOrder(order._id)} className="bg-orange-600 hover:bg-orange-700 text-white">
+                                                                    Confirm Return
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 );
                                             }
                                             return null;

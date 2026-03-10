@@ -22,6 +22,7 @@ const orderSchema = new mongoose.Schema(
         estimatedDelivery: { type: Date },
         deliveredAt: { type: Date },
         returnedAt: { type: Date },
+        returnReason: { type: String },
         status: {
             type: String,
             enum: ["Out for Delivery", "Processing", "Shipped", "Delivered", "Cancelled", "Refunded", "Returned"],

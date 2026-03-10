@@ -710,6 +710,7 @@ app.put("/api/orders/:id/cancel", verifyToken, async (req, res) => {
 // PUT /api/orders/:id/return - return an order within 7 days of delivery
 app.put("/api/orders/:id/return", verifyToken, async (req, res) => {
     try {
+        const { returnReason } = req.body || {};
         const order = await Order.findOne({ _id: req.params.id, userId: req.verifiedUser.id });
         if (!order) return res.status(404).json({ message: "Order not found" });
 
@@ -733,6 +734,9 @@ app.put("/api/orders/:id/return", verifyToken, async (req, res) => {
 
         order.status = "Returned";
         order.returnedAt = new Date();
+        if (returnReason) {
+            order.returnReason = returnReason;
+        }
         await order.save();
 
         res.json({ message: "Return initiated. You will be refunded in 24 hours.", order });
