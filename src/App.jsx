@@ -24,6 +24,7 @@ import { CoinsInfo } from "./pages/CoinsInfo";
 import { DailyRewardModal } from "./comps/DailyRewardModal";
 import Orders from "./pages/Orders";
 import CheckoutConfirmation from "./pages/CheckoutConfirmation";
+import AdminOrders from "./pages/AdminOrders";
 
 export function App() {
 
@@ -48,6 +49,7 @@ export function App() {
         <Route path="/coins" element={<CoinsInfo />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/checkout" element={<CheckoutConfirmation />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
       </Routes>
       <Toaster
         richColors

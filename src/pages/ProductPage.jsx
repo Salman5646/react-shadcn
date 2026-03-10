@@ -14,7 +14,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Star, StarHalf, ShoppingCart, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus, Heart, Package } from "lucide-react";
+import { Star, StarHalf, ShoppingCart, Trash2, ShieldCheck, Truck, RefreshCw, MessageSquarePlus, Heart, Package, MapPin } from "lucide-react";
 import * as cartService from "@/lib/cartService";
 import * as wishlistService from "@/lib/wishlistService";
 import { verifySession } from "@/lib/cookieUtils";
@@ -343,11 +343,11 @@ const ProductPage = () => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                                    <Truck className="w-5 h-5" />
+                                    <MapPin className="w-5 h-5" />
                                 </div>
                                 <div className="text-[11px] font-bold uppercase tracking-wider leading-none">
-                                    <p className="text-slate-400 mb-1">Shipping</p>
-                                    <p className="text-slate-900 dark:text-white">Fast & Free</p>
+                                    <p className="text-slate-400 mb-1">Ships From</p>
+                                    <p className="text-slate-900 dark:text-white">{product.origin_location || "Mumbai, India"}</p>
                                 </div>
                             </div>
                         </div>

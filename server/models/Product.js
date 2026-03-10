@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema(
         product_image_transparent: { type: String, required: false },
         category: { type: String, required: true },
         price: { type: Number, required: true },
+        origin_location: { type: String, default: "Mumbai, India" },
         rating: {
             rate: { type: Number, default: 0 },
             count: { type: Number, default: 0 },

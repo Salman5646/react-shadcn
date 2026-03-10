@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/popover"
 import {
     fetchNotifications,
-    markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
 } from "@/lib/notificationService"
 
 const TYPE_ICONS = {
@@ -71,6 +71,11 @@ export function NotificationBell() {
         setNotifications((prev) => prev.filter((n) => n._id !== id))
     }
 
+    const handleDeleteAll = async () => {
+        await deleteAllNotifications()
+        setNotifications([])
+    }
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -94,14 +99,24 @@ export function NotificationBell() {
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <h3 className="text-sm font-semibold">Notifications</h3>
-                    {unreadCount > 0 && (
-                        <button
-                            onClick={handleMarkAllRead}
-                            className="flex items-center gap-1 text-xs text-primary hover:underline"
-                        >
-                            <CheckCheck className="h-3 w-3" /> Mark all read
-                        </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                        {unreadCount > 0 && (
+                            <button
+                                onClick={handleMarkAllRead}
+                                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                                <CheckCheck className="h-3 w-3" /> Mark all read
+                            </button>
+                        )}
+                        {notifications.length > 0 && (
+                            <button
+                                onClick={handleDeleteAll}
+                                className="flex items-center gap-1 text-xs text-red-500 hover:underline"
+                            >
+                                <Trash2 className="h-3 w-3" /> Delete all
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* List */}

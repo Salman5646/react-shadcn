@@ -20,7 +20,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-import { Trash2, Heart } from "lucide-react"
+import { Trash2, Heart, MapPin } from "lucide-react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { verifySession } from "@/lib/cookieUtils"
@@ -104,6 +104,12 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                             {item.product_description}
                         </CardDescription>
                     </div>
+                    {item.origin_location && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-1.5 font-medium">
+                            <MapPin className="h-3 w-3 text-indigo-500" />
+                            <span>Ships from {item.origin_location}</span>
+                        </div>
+                    )}
                 </div>
                 <CardContent className="p-0 pt-1 md:pt-2 mt-auto">
                     <p className="text-base md:text-lg font-bold text-primary">${item.price}</p>

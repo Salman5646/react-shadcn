@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, Loader2, Calendar, CreditCard, ChevronRight, Coins } from "lucide-react";
+import { Package, Loader2, Calendar, CreditCard, ChevronRight, Coins, RefreshCcw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { verifySession } from "@/lib/cookieUtils";
 import { BackButton } from "../comps/BackButton";
@@ -12,6 +12,7 @@ export default function Orders() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        let intervalId;
         const checkUser = async () => {
             const userData = await verifySession();
             if (!userData) {
@@ -21,11 +22,19 @@ export default function Orders() {
             }
             setUser(userData);
             fetchOrders();
+            // Poll for dynamic status updates
+            intervalId = setInterval(() => {
+                fetchOrders(true);
+            }, 10000);
         };
         checkUser();
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
     }, [navigate]);
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (silent = false) => {
         try {
             const res = await fetch("/api/orders", {
                 credentials: "include"
@@ -33,13 +42,51 @@ export default function Orders() {
             if (res.ok) {
                 const data = await res.json();
                 setOrders(data);
-            } else {
+            } else if (!silent) {
                 toast.error("Failed to load orders");
             }
         } catch (error) {
-            toast.error("Network error");
+            if (!silent) toast.error("Network error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCancelOrder = async (orderId) => {
+        if (!confirm("Are you sure you want to cancel this order?")) return;
+        try {
+            const res = await fetch(`/api/orders/${orderId}/cancel`, {
+                method: "PUT",
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.message);
+                fetchOrders(true);
+            } else {
+                toast.error(data.message || "Failed to cancel order");
+            }
+        } catch (err) {
+            toast.error("Network error");
+        }
+    };
+
+    const handleReturnOrder = async (orderId) => {
+        if (!confirm("Are you sure you want to return this order? You have 7 days from delivery.")) return;
+        try {
+            const res = await fetch(`/api/orders/${orderId}/return`, {
+                method: "PUT",
+                credentials: "include"
+            });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.message);
+                fetchOrders(true);
+            } else {
+                toast.error(data.message || "Failed to initiate return");
+            }
+        } catch (err) {
+            toast.error("Network error");
         }
     };
 
@@ -158,6 +205,36 @@ export default function Orders() {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+
+                                {/* Order Actions Footer */}
+                                <div className="p-4 sm:px-8 border-t border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-950/30 flex justify-end gap-3">
+                                    {order.status === "Processing" && (
+                                        <button
+                                            onClick={() => handleCancelOrder(order._id)}
+                                            className="px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                        >
+                                            <XCircle className="w-4 h-4" /> Cancel Order
+                                        </button>
+                                    )}
+                                    {order.status === "Delivered" && order.deliveredAt && (
+                                        (() => {
+                                            const SEVEN_SIMULATED_DAYS = 7 * 60 * 1000;
+                                            const isReturnable = (Date.now() - new Date(order.deliveredAt).getTime()) <= SEVEN_SIMULATED_DAYS;
+
+                                            if (isReturnable) {
+                                                return (
+                                                    <button
+                                                        onClick={() => handleReturnOrder(order._id)}
+                                                        className="px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                                    >
+                                                        <RefreshCcw className="w-4 h-4" /> Return Item
+                                                    </button>
+                                                );
+                                            }
+                                            return null;
+                                        })()
+                                    )}
                                 </div>
                             </div>
                         ))}

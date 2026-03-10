@@ -32,3 +32,12 @@ export async function deleteNotification(id) {
     if (!res.ok) throw new Error("Failed to delete notification");
     return res.json();
 }
+
+export async function deleteAllNotifications() {
+    const res = await fetch(API_BASE, {
+        method: "DELETE",
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Failed to delete all notifications");
+    return res.json();
+}

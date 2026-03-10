@@ -11,6 +11,7 @@ import User from "./models/User.js";
 import Cart from "./models/Cart.js";
 import Notification from "./models/Notification.js";
 import Order from "./models/Order.js";
+import { startOrderStatusUpdater } from "./services/orderStatusUpdater.js";
 
 dotenv.config();
 
@@ -642,6 +643,12 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
             items: orderItems,
             totalAmount: totalRounded,
             paymentMethod: "Shopr Coins",
+            deliveryAddress: {
+                address: user.address || "Online Delivery",
+                city: user.city || "N/A",
+                country: user.country || "India"
+            },
+            estimatedDelivery: new Date(Date.now() + 5 * 60000), // Delivered in ~5 minutes for testing flow
             status: "Processing"
         });
 
@@ -676,6 +683,59 @@ app.get("/api/orders", verifyToken, async (req, res) => {
         const orders = await Order.find({ userId: req.verifiedUser.id })
             .sort({ createdAt: -1 }); // Newest first
         res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT /api/orders/:id/cancel - cancel an order before it ships
+app.put("/api/orders/:id/cancel", verifyToken, async (req, res) => {
+    try {
+        const order = await Order.findOne({ _id: req.params.id, userId: req.verifiedUser.id });
+        if (!order) return res.status(404).json({ message: "Order not found" });
+
+        if (order.status !== "Processing") {
+            return res.status(400).json({ message: "Order can only be cancelled while Processing." });
+        }
+
+        order.status = "Cancelled";
+        await order.save();
+
+        res.json({ message: "Order cancelled successfully.", order });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT /api/orders/:id/return - return an order within 7 days of delivery
+app.put("/api/orders/:id/return", verifyToken, async (req, res) => {
+    try {
+        const order = await Order.findOne({ _id: req.params.id, userId: req.verifiedUser.id });
+        if (!order) return res.status(404).json({ message: "Order not found" });
+
+        if (order.status !== "Delivered") {
+            return res.status(400).json({ message: "Only delivered orders can be returned." });
+        }
+
+        if (!order.deliveredAt) {
+            return res.status(400).json({ message: "Delivery date missing. Cannot process return." });
+        }
+
+        // Check if within 7 real days.
+        // For testing we use scaled time: 7 simulated days = 7 * 60,000 ms = 420,000 ms (7 real minutes)
+        const SEVEN_SIMULATED_DAYS = 7 * 60 * 1000;
+        const now = Date.now();
+        const deliveredTime = new Date(order.deliveredAt).getTime();
+
+        if (now - deliveredTime > SEVEN_SIMULATED_DAYS) {
+            return res.status(400).json({ message: "Return window (7 days) has expired." });
+        }
+
+        order.status = "Returned";
+        order.returnedAt = new Date();
+        await order.save();
+
+        res.json({ message: "Return initiated. You will be refunded in 24 hours.", order });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -735,6 +795,16 @@ app.delete("/api/notifications/:id", verifyToken, async (req, res) => {
         });
         if (!notification) return res.status(404).json({ message: "Notification not found" });
         res.json({ message: "Notification deleted" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE /api/notifications — delete all notifications for user
+app.delete("/api/notifications", verifyToken, async (req, res) => {
+    try {
+        await Notification.deleteMany({ userId: req.verifiedUser.id });
+        res.json({ message: "All notifications deleted" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -804,6 +874,66 @@ app.put("/api/admin/users/:id/role", verifyToken, async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
+// GET all orders (admin only)
+app.get("/api/admin/orders", verifyToken, async (req, res) => {
+    try {
+        const admin = req.verifiedUser;
+        if (!admin || admin.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
+
+        const orders = await Order.find()
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 }); // Newest first
+
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// PUT update order status (admin only)
+app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
+    try {
+        const admin = req.verifiedUser;
+        if (!admin || admin.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
+
+        const { status } = req.body;
+        const validStatuses = ["Processing", "Shipped", "Delivered", "Cancelled", "Refunded", "Returned"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status" });
+        }
+
+        const order = await Order.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        ).populate('userId', 'name email');
+
+        if (!order) return res.status(404).json({ message: "Order not found" });
+
+        // Send order update notification
+        try {
+            if (order.userId && order.userId._id) {
+                await Notification.create({
+                    userId: order.userId._id,
+                    title: "Order Update 📦",
+                    message: `Your order #${order._id.toString().slice(-8).toUpperCase()} is now ${status}!`,
+                    type: status === "Cancelled" || status === "Returned" || status === "Refunded" ? "warning" : "success",
+                });
+            }
+        } catch (_) { /* non-critical */ }
+
+        res.json({ message: "Order status updated successfully", order });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 
 // ── Cart Routes (authenticated users only) ──
 
@@ -1144,6 +1274,7 @@ mongoose
     .connect(process.env.MONGO_URI)
     .then(() => {
         console.log("MongoDB connected");
+        startOrderStatusUpdater();
         app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
     })
     .catch((err) => {

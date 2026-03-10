@@ -153,6 +153,14 @@ export function AppSidebar() {
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/admin/orders"} className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 dark:data-[active=true]:bg-indigo-500/10 dark:data-[active=true]:text-indigo-400 transition-colors">
+                                            <Link to="/admin/orders" className="flex items-center gap-3">
+                                                <Package className="h-4 w-4" />
+                                                <span className="font-medium">Manage Orders</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
                                 </>
                             ) : (
                                 <>

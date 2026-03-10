@@ -14,9 +14,17 @@ const orderSchema = new mongoose.Schema(
         items: [orderItemSchema],
         totalAmount: { type: Number, required: true },
         paymentMethod: { type: String, default: "Shopr Coins" },
+        deliveryAddress: {
+            address: { type: String, default: "Online Delivery" },
+            city: { type: String, default: "N/A" },
+            country: { type: String, default: "India" }
+        },
+        estimatedDelivery: { type: Date },
+        deliveredAt: { type: Date },
+        returnedAt: { type: Date },
         status: {
             type: String,
-            enum: ["Processing", "Shipped", "Delivered", "Cancelled", "Refunded","Returned"],
+            enum: ["Out for Delivery", "Processing", "Shipped", "Delivered", "Cancelled", "Refunded", "Returned"],
             default: "Processing"
         },
     },
