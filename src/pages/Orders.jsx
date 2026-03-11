@@ -20,7 +20,8 @@ export default function Orders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    const [returnReason, setReturnReason] = useState("");
+    const [returnTopic, setReturnTopic] = useState("");
+    const [returnDesc, setReturnDesc] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -83,17 +84,25 @@ export default function Orders() {
     };
 
     const handleReturnOrder = async (orderId) => {
+        if (!returnTopic) {
+            toast.error("Please select a return topic");
+            return;
+        }
+        
+        const combinedReason = `${returnTopic}${returnDesc ? ' - ' + returnDesc : ''}`;
+
         try {
             const res = await fetch(`/api/orders/${orderId}/return`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ returnReason }),
+                body: JSON.stringify({ returnReason: combinedReason }),
                 credentials: "include"
             });
             const data = await res.json();
             if (res.ok) {
                 toast.success(data.message);
-                setReturnReason(""); // clear after submission
+                setReturnTopic(""); // clear after submission
+                setReturnDesc("");
                 fetchOrders(true);
             } else {
                 toast.error(data.message || "Failed to initiate return");
@@ -221,7 +230,13 @@ export default function Orders() {
                                 </div>
 
                                 {/* Order Actions Footer */}
-                                <div className="p-4 sm:px-8 border-t border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-950/30 flex justify-end gap-3">
+                                <div className="p-4 sm:px-8 border-t border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-950/30 flex flex-wrap justify-end gap-3">
+                                    <Link 
+                                        to={`/order-tracking/${order._id}`}
+                                        className="px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                    >
+                                        <Package className="w-4 h-4" /> Track Order
+                                    </Link>
                                     {order.status === "Processing" && (
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -249,8 +264,13 @@ export default function Orders() {
                                     )}
                                     {order.status === "Delivered" && order.deliveredAt && (
                                         (() => {
-                                            const SEVEN_SIMULATED_DAYS = 7 * 60 * 1000;
-                                            const isReturnable = (Date.now() - new Date(order.deliveredAt).getTime()) <= SEVEN_SIMULATED_DAYS;
+                                            const deliveryDate = new Date(order.deliveredAt);
+                                            // Validate date
+                                            if (isNaN(deliveryDate.getTime())) return null;
+
+                                            const ONE_DAY = 24 * 60 * 60 * 1000;
+                                            const SEVEN_DAYS = 7 * ONE_DAY;
+                                            const isReturnable = (Date.now() - deliveryDate.getTime()) <= SEVEN_DAYS;
 
                                             if (isReturnable) {
                                                 return (
@@ -269,20 +289,39 @@ export default function Orders() {
                                                                     Are you sure you want to return this order? You have 7 days from delivery to initiate a return.
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
-                                                            <div className="py-2">
-                                                                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                                                                    Reason for Return
-                                                                </label>
-                                                                <textarea
-                                                                    value={returnReason}
-                                                                    onChange={(e) => setReturnReason(e.target.value)}
-                                                                    placeholder="E.g., Item was defective, wrong size..."
-                                                                    rows={3}
-                                                                    className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-100"
-                                                                />
+                                                            <div className="py-2 flex flex-col gap-4">
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                                        Topic
+                                                                    </label>
+                                                                    <select
+                                                                        value={returnTopic}
+                                                                        onChange={(e) => setReturnTopic(e.target.value)}
+                                                                        className="flex h-10 w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                                                                    >
+                                                                        <option value="" disabled>Select a reason</option>
+                                                                        <option value="Defective or Damaged">Defective or Damaged</option>
+                                                                        <option value="Wrong Item Shipped">Wrong Item Shipped</option>
+                                                                        <option value="Item Not As Described">Item Not As Described</option>
+                                                                        <option value="Changed My Mind">Changed My Mind</option>
+                                                                        <option value="Other">Other</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                                                                        Description (Optional)
+                                                                    </label>
+                                                                    <textarea
+                                                                        value={returnDesc}
+                                                                        onChange={(e) => setReturnDesc(e.target.value)}
+                                                                        placeholder="Please provide more details..."
+                                                                        rows={3}
+                                                                        className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 text-sm shadow-sm placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-100"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                             <AlertDialogFooter>
-                                                                <AlertDialogCancel onClick={() => setReturnReason("")}>Cancel</AlertDialogCancel>
+                                                                <AlertDialogCancel onClick={() => { setReturnTopic(""); setReturnDesc(""); }}>Cancel</AlertDialogCancel>
                                                                 <AlertDialogAction onClick={() => handleReturnOrder(order._id)} className="bg-orange-600 hover:bg-orange-700 text-white">
                                                                     Confirm Return
                                                                 </AlertDialogAction>

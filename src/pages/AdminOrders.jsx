@@ -1,9 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, Package, Search, Calendar, ChevronRight, Edit, Check, X, ShieldAlert } from "lucide-react";
+import { Loader2, Package, Search, Calendar, ChevronRight, Edit, Check, X, ShieldAlert, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { verifySession } from "@/lib/cookieUtils";
 import { BackButton } from "../comps/BackButton";
+import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminOrders() {
     const [orders, setOrders] = useState([]);
@@ -26,6 +38,7 @@ export default function AdminOrders() {
     }, [navigate]);
 
     const fetchOrders = async () => {
+        setLoading(true);
         try {
             const res = await fetch("/api/admin/orders", {
                 credentials: "include"
@@ -40,6 +53,24 @@ export default function AdminOrders() {
             toast.error("Network error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (orderId) => {
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}`, {
+                method: "DELETE",
+                credentials: "include"
+            });
+            if (res.ok) {
+                toast.success("Order deleted successfully");
+                setOrders(orders.filter(order => order._id !== orderId));
+            } else {
+                const data = await res.json();
+                toast.error(data.message || "Failed to delete order");
+            }
+        } catch (error) {
+            toast.error("Network error while deleting order");
         }
     };
 
@@ -112,8 +143,20 @@ export default function AdminOrders() {
 
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Manage Orders</h1>
+                    <div className="flex-1">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Manage Orders</h1>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={fetchOrders} 
+                                disabled={loading}
+                                className="rounded-full gap-2 transition-all hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </Button>
+                        </div>
                         <p className="text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-2">
                             <Package className="h-4 w-4" /> View and update all customer orders
                         </p>
@@ -128,7 +171,7 @@ export default function AdminOrders() {
                             placeholder="Search orders, users..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-full leading-5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-shadow"
+                            className="block w-full pl-10 pr-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-full leading-5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-shadow shadow-sm"
                         />
                     </div>
                 </div>
@@ -150,7 +193,7 @@ export default function AdminOrders() {
                                 {filteredOrders.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
-                                            No orders found matching "{searchTerm}"
+                                            {loading ? <Loader2 className="h-6 w-6 animate-spin mx-auto text-indigo-500" /> : `No orders found matching "${searchTerm}"`}
                                         </td>
                                     </tr>
                                 ) : (
@@ -181,12 +224,12 @@ export default function AdminOrders() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                                <div className="flex items-center justify-end gap-3">
                                                     {updating === order._id ? (
                                                         <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
                                                     ) : (
                                                         <select
-                                                            className="text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2"
+                                                            className="text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 outline-none"
                                                             value={order.status}
                                                             onChange={(e) => handleStatusChange(order._id, e.target.value)}
                                                         >
@@ -198,6 +241,31 @@ export default function AdminOrders() {
                                                             <option value="Refunded">Refunded</option>
                                                         </select>
                                                     )}
+
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <button className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors" title="Delete Order">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle className="text-xl font-bold dark:text-white">Delete Order?</AlertDialogTitle>
+                                                                <AlertDialogDescription className="dark:text-zinc-400">
+                                                                    Are you sure you want to delete order <span className="font-mono text-zinc-900 dark:text-zinc-200">#{order._id.slice(-8).toUpperCase()}</span>? This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter className="mt-6">
+                                                                <AlertDialogCancel className="rounded-xl border-zinc-200 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900">Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction 
+                                                                    onClick={() => handleDelete(order._id)}
+                                                                    className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg shadow-red-600/20 border-none"
+                                                                >
+                                                                    Delete Order
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </div>
                                             </td>
                                         </tr>

@@ -25,6 +25,7 @@ import { DailyRewardModal } from "./comps/DailyRewardModal";
 import Orders from "./pages/Orders";
 import CheckoutConfirmation from "./pages/CheckoutConfirmation";
 import AdminOrders from "./pages/AdminOrders";
+import OrderTracking from "./pages/OrderTracking";
 
 export function App() {
 
@@ -48,6 +49,7 @@ export function App() {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/coins" element={<CoinsInfo />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/order-tracking/:id" element={<OrderTracking />} />
         <Route path="/checkout" element={<CheckoutConfirmation />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
       </Routes>

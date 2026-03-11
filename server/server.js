@@ -11,7 +11,7 @@ import User from "./models/User.js";
 import Cart from "./models/Cart.js";
 import Notification from "./models/Notification.js";
 import Order from "./models/Order.js";
-import { startOrderStatusUpdater } from "./services/orderStatusUpdater.js";
+import { startOrderStatusUpdater, calculateShippingDays } from "./services/orderStatusUpdater.js";
 
 dotenv.config();
 
@@ -638,6 +638,12 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
             quantity: item.quantity || 1
         }));
 
+        const firstItemOrigin = cart.items.length > 0 && cart.items[0].productId ? cart.items[0].productId.origin_location : "Warehouse";
+        const shippingDays = calculateShippingDays(firstItemOrigin, user.city, user.country);
+
+        const ONE_DAY = 24 * 60 * 60 * 1000;
+        const estimatedDeliveryDate = new Date(Date.now() + shippingDays * ONE_DAY);
+
         const newOrder = await Order.create({
             userId,
             items: orderItems,
@@ -648,7 +654,7 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
                 city: user.city || "N/A",
                 country: user.country || "India"
             },
-            estimatedDelivery: new Date(Date.now() + 5 * 60000), // Delivered in ~5 minutes for testing flow
+            estimatedDelivery: estimatedDeliveryDate,
             status: "Processing"
         });
 
@@ -688,6 +694,62 @@ app.get("/api/orders", verifyToken, async (req, res) => {
     }
 });
 
+// GET /api/orders/:id — fetch single order with tracking milestones
+app.get("/api/orders/:id", verifyToken, async (req, res) => {
+    try {
+        // Find order and populate products to get origin_location
+        const order = await Order.findOne({ _id: req.params.id, userId: req.verifiedUser.id })
+                                 .populate("items.productId");
+        
+        if (!order) return res.status(404).json({ message: "Order not found" });
+
+        // Calculate tracking milestones based on real days
+        const firstItemOrigin = order.items.length > 0 && order.items[0].productId ? 
+                                order.items[0].productId.origin_location : "Warehouse";
+        
+        const shippingDays = calculateShippingDays(
+            firstItemOrigin, 
+            order.deliveryAddress?.city, 
+            order.deliveryAddress?.country
+        );
+
+        // Calculate tracking milestones based on real days
+        const ONE_DAY = 24 * 60 * 60 * 1000;
+        const createdAt = new Date(order.createdAt).getTime();
+
+        // 1. Processing: when created
+        const processingDate = new Date(createdAt);
+        
+        // 2. Shipped: 1/3 of the way through the total shipping time (min 8 hours)
+        const ONE_HOUR = 60 * 60 * 1000;
+        const totalDurationMs = shippingDays * ONE_DAY;
+        const shippedDate = new Date(createdAt + Math.max(8 * ONE_HOUR, totalDurationMs / 3));
+        
+        // 3. Out for Delivery: 2/3 of the way through the total shipping time
+        const outForDeliveryDate = new Date(createdAt + Math.max(16 * ONE_HOUR, (totalDurationMs / 3) * 2));
+        
+        // 4. Delivered: exact estimated delivery date (or actual deliveredAt if it already happened)
+        const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.estimatedDelivery);
+
+        // Sanitize populated items back to just needed view fields so we don't leak extra DB fields if unneeded
+        const orderObj = order.toObject();
+        
+        res.json({
+            ...orderObj,
+            trackingDates: {
+                processing: processingDate,
+                shipped: shippedDate,
+                outForDelivery: outForDeliveryDate,
+                delivered: deliveredDate,
+                totalShippingDays: shippingDays
+            }
+        });
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // PUT /api/orders/:id/cancel - cancel an order before it ships
 app.put("/api/orders/:id/cancel", verifyToken, async (req, res) => {
     try {
@@ -701,7 +763,28 @@ app.put("/api/orders/:id/cancel", verifyToken, async (req, res) => {
         order.status = "Cancelled";
         await order.save();
 
-        res.json({ message: "Order cancelled successfully.", order });
+        // Refund coins to user immediately on cancellation
+        let currentCoins = 0;
+        try {
+            const user = await User.findById(order.userId);
+            if (user) {
+                user.coins = Math.round(((user.coins ?? 0) + order.totalAmount) * 100) / 100;
+                await user.save();
+                currentCoins = user.coins;
+            }
+            
+            // Send notification
+            await Notification.create({
+                userId: order.userId,
+                title: "Order Cancelled & Refunded 🚫",
+                message: `Your order #${order._id.toString().slice(-8).toUpperCase()} was cancelled. ${order.totalAmount} coins have been refunded to your account.`,
+                type: "success",
+            });
+        } catch (err) {
+            console.error("Failed to process cancellation refund side-effects:", err);
+        }
+
+        res.json({ message: "Order cancelled successfully and coins refunded.", order, coins: currentCoins });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -722,13 +805,11 @@ app.put("/api/orders/:id/return", verifyToken, async (req, res) => {
             return res.status(400).json({ message: "Delivery date missing. Cannot process return." });
         }
 
-        // Check if within 7 real days.
-        // For testing we use scaled time: 7 simulated days = 7 * 60,000 ms = 420,000 ms (7 real minutes)
-        const SEVEN_SIMULATED_DAYS = 7 * 60 * 1000;
+        // Check if within 7 real days (7 * 24 hours).
+        const ONE_DAY = 24 * 60 * 60 * 1000;
+        const SEVEN_DAYS = 7 * ONE_DAY;
         const now = Date.now();
-        const deliveredTime = new Date(order.deliveredAt).getTime();
-
-        if (now - deliveredTime > SEVEN_SIMULATED_DAYS) {
+        if (now - new Date(order.deliveredAt).getTime() > SEVEN_DAYS) {
             return res.status(400).json({ message: "Return window (7 days) has expired." });
         }
 
@@ -911,27 +992,75 @@ app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
             return res.status(400).json({ message: "Invalid status" });
         }
 
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
-            { status },
-            { new: true }
-        ).populate('userId', 'name email');
-
+        const order = await Order.findById(req.params.id);
         if (!order) return res.status(404).json({ message: "Order not found" });
+
+        const previousStatus = order.status;
+        const updateFields = { status };
+        if (status === "Delivered") {
+            updateFields.deliveredAt = new Date();
+        }
+
+        // Refund coins if status changed to Cancelled or Refunded
+        if ((status === "Cancelled" || status === "Refunded") && 
+            previousStatus !== "Cancelled" && previousStatus !== "Refunded") {
+            try {
+                const user = await User.findById(order.userId);
+                if (user) {
+                    user.coins = (user.coins || 0) + order.totalAmount;
+                    await user.save();
+
+                    // Notify user about refund
+                    await Notification.create({
+                        userId: user._id,
+                        title: "Coins Refunded 🪙",
+                        message: `Your order #${order._id.toString().slice(-8).toUpperCase()} was ${status.toLowerCase()}. Shopr Coins have been refunded to your wallet.`,
+                        type: "info",
+                    });
+                }
+            } catch (refundError) {
+                console.error("[AdminOrderUpdate] Refund failed:", refundError);
+                // We continue order update even if refund notification fails, 
+                // but usually we'd want to handle this more robustly.
+            }
+        }
+
+        order.status = status;
+        if (updateFields.deliveredAt) order.deliveredAt = updateFields.deliveredAt;
+        await order.save();
+
+        const updatedOrder = await Order.findById(order._id).populate('userId', 'name email');
 
         // Send order update notification
         try {
-            if (order.userId && order.userId._id) {
+            if (updatedOrder.userId && updatedOrder.userId._id) {
                 await Notification.create({
-                    userId: order.userId._id,
+                    userId: updatedOrder.userId._id,
                     title: "Order Update 📦",
-                    message: `Your order #${order._id.toString().slice(-8).toUpperCase()} is now ${status}!`,
+                    message: `Your order #${updatedOrder._id.toString().slice(-8).toUpperCase()} is now ${status}!`,
                     type: status === "Cancelled" || status === "Returned" || status === "Refunded" ? "warning" : "success",
                 });
             }
         } catch (_) { /* non-critical */ }
 
-        res.json({ message: "Order status updated successfully", order });
+        res.json({ message: "Order status updated successfully", order: updatedOrder });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// DELETE an order (admin only)
+app.delete("/api/admin/orders/:id", verifyToken, async (req, res) => {
+    try {
+        const admin = req.verifiedUser;
+        if (!admin || admin.role !== "admin") {
+            return res.status(403).json({ message: "Access denied. Admin only." });
+        }
+
+        const order = await Order.findByIdAndDelete(req.params.id);
+        if (!order) return res.status(404).json({ message: "Order not found" });
+
+        res.json({ message: "Order deleted successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
