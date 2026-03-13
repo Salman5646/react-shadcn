@@ -240,7 +240,7 @@ export default function CheckoutConfirmation() {
                                         <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-zinc-500">Subtotal</span>
-                                                <span className="font-mono">${total.toFixed(2)}</span>
+                                                <span className="font-mono">₹{total.toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-zinc-500">Shipping</span>

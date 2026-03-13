@@ -11,6 +11,7 @@ import User from "./models/User.js";
 import Cart from "./models/Cart.js";
 import Notification from "./models/Notification.js";
 import Order from "./models/Order.js";
+import CoinTransaction from "./models/CoinTransaction.js";
 import { startOrderStatusUpdater, calculateShippingDays } from "./services/orderStatusUpdater.js";
 
 dotenv.config();
@@ -232,6 +233,17 @@ app.post("/api/register", async (req, res) => {
         }));
         setTokenCookie(res, userData);
 
+        // Record welcome coins transaction
+        try {
+            await CoinTransaction.create({
+                userId: user._id,
+                amount: 1000,
+                type: "welcome",
+                description: "Welcome to Shopr! Initial balance.",
+                balanceAfter: 1000
+            });
+        } catch (err) { console.error("Failed to record welcome transaction:", err); }
+
         // Create a welcome notification for the new user
         try {
             await Notification.create({
@@ -280,6 +292,17 @@ async function processLoginReward(user) {
 
     user.coins = (user.coins || 0) + reward;
     user.lastLoginReward = now;
+
+    // Record daily reward transaction
+    try {
+        await CoinTransaction.create({
+            userId: user._id,
+            amount: reward,
+            type: "reward",
+            description: isDay7 ? "7-day login streak bonus!" : "Daily login reward.",
+            balanceAfter: user.coins
+        });
+    } catch (err) { console.error("Failed to record reward transaction:", err); }
 
     // Reset streak after day 7
     if (isDay7) user.loginStreak = 0;
@@ -603,6 +626,21 @@ app.get("/api/coins", verifyToken, async (req, res) => {
     }
 });
 
+// GET /api/coins/history — fetch user's transaction history
+app.get("/api/coins/history", verifyToken, async (req, res) => {
+    try {
+        const userId = req.verifiedUser.id;
+        console.log(`[CoinHistory] Fetching history for user: ${userId}`);
+        const history = await CoinTransaction.find({ userId: new mongoose.Types.ObjectId(userId) })
+            .sort({ createdAt: -1 });
+        console.log(`[CoinHistory] Found ${history.length} transactions`);
+        res.json(history);
+    } catch (err) {
+        console.error("[CoinHistory] Error:", err.message);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // POST /api/checkout — purchase cart items using coins
 app.post("/api/checkout", verifyToken, async (req, res) => {
     try {
@@ -661,6 +699,19 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
         // Deduct coins and clear cart
         user.coins = Math.round(((user.coins ?? 0) - totalRounded) * 100) / 100;
         await user.save();
+
+        // Record purchase transaction
+        try {
+            const tx = await CoinTransaction.create({
+                userId: user._id,
+                amount: -totalRounded,
+                type: "purchase",
+                description: `Purchase of ${orderItems.length} item(s) - Order #${newOrder._id.toString().slice(-8).toUpperCase()}`,
+                balanceAfter: user.coins
+            });
+            console.log(`[Checkout] Transaction recorded: ${tx._id}`);
+        } catch (err) { console.error("[Checkout] Failed to record purchase transaction:", err.message); }
+
         await Cart.findOneAndDelete({ userId });
 
         // Send purchase notification
@@ -699,17 +750,17 @@ app.get("/api/orders/:id", verifyToken, async (req, res) => {
     try {
         // Find order and populate products to get origin_location
         const order = await Order.findOne({ _id: req.params.id, userId: req.verifiedUser.id })
-                                 .populate("items.productId");
-        
+            .populate("items.productId");
+
         if (!order) return res.status(404).json({ message: "Order not found" });
 
         // Calculate tracking milestones based on real days
-        const firstItemOrigin = order.items.length > 0 && order.items[0].productId ? 
-                                order.items[0].productId.origin_location : "Warehouse";
-        
+        const firstItemOrigin = order.items.length > 0 && order.items[0].productId ?
+            order.items[0].productId.origin_location : "Warehouse";
+
         const shippingDays = calculateShippingDays(
-            firstItemOrigin, 
-            order.deliveryAddress?.city, 
+            firstItemOrigin,
+            order.deliveryAddress?.city,
             order.deliveryAddress?.country
         );
 
@@ -719,27 +770,42 @@ app.get("/api/orders/:id", verifyToken, async (req, res) => {
 
         // 1. Processing: when created
         const processingDate = new Date(createdAt);
-        
+
         // 2. Shipped: 1/3 of the way through the total shipping time (min 8 hours)
         const ONE_HOUR = 60 * 60 * 1000;
         const totalDurationMs = shippingDays * ONE_DAY;
         const shippedDate = new Date(createdAt + Math.max(8 * ONE_HOUR, totalDurationMs / 3));
-        
+
         // 3. Out for Delivery: 2/3 of the way through the total shipping time
         const outForDeliveryDate = new Date(createdAt + Math.max(16 * ONE_HOUR, (totalDurationMs / 3) * 2));
-        
+
         // 4. Delivered: exact estimated delivery date (or actual deliveredAt if it already happened)
         const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.estimatedDelivery);
 
+        // Ensure shipped and outForDelivery aren't in the future if already delivered/completed
+        let finalShippedDate = shippedDate;
+        let finalOutForDeliveryDate = outForDeliveryDate;
+
+        if ((order.status === "Delivered" || order.status === "Returned" || order.status === "Refunded") && deliveredDate) {
+            const deliveredTime = deliveredDate.getTime();
+            // If it was delivered faster than estimates, cap the previous steps
+            if (finalOutForDeliveryDate.getTime() > deliveredTime) {
+                finalOutForDeliveryDate = new Date(deliveredTime - (15 * 60 * 1000)); // 15 mins before delivery
+            }
+            if (finalShippedDate.getTime() > finalOutForDeliveryDate.getTime()) {
+                finalShippedDate = new Date(finalOutForDeliveryDate.getTime() - (2 * 60 * 60 * 1000)); // 2 hours before out-for-delivery
+            }
+        }
+
         // Sanitize populated items back to just needed view fields so we don't leak extra DB fields if unneeded
         const orderObj = order.toObject();
-        
+
         res.json({
             ...orderObj,
             trackingDates: {
                 processing: processingDate,
-                shipped: shippedDate,
-                outForDelivery: outForDeliveryDate,
+                shipped: finalShippedDate,
+                outForDelivery: finalOutForDeliveryDate,
                 delivered: deliveredDate,
                 totalShippingDays: shippingDays
             }
@@ -771,8 +837,18 @@ app.put("/api/orders/:id/cancel", verifyToken, async (req, res) => {
                 user.coins = Math.round(((user.coins ?? 0) + order.totalAmount) * 100) / 100;
                 await user.save();
                 currentCoins = user.coins;
+
+                // Record refund transaction
+                const subTx = await CoinTransaction.create({
+                    userId: user._id,
+                    amount: order.totalAmount,
+                    type: "refund",
+                    description: `Refund for cancelled order #${order._id.toString().slice(-8).toUpperCase()}`,
+                    balanceAfter: user.coins
+                });
+                console.log(`[CancelOrder] Transaction recorded: ${subTx._id}`);
             }
-            
+
             // Send notification
             await Notification.create({
                 userId: order.userId,
@@ -1002,7 +1078,7 @@ app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
         }
 
         // Refund coins if status changed to Cancelled or Refunded
-        if ((status === "Cancelled" || status === "Refunded") && 
+        if ((status === "Cancelled" || status === "Refunded") &&
             previousStatus !== "Cancelled" && previousStatus !== "Refunded") {
             try {
                 const user = await User.findById(order.userId);
@@ -1016,6 +1092,15 @@ app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
                         title: "Coins Refunded 🪙",
                         message: `Your order #${order._id.toString().slice(-8).toUpperCase()} was ${status.toLowerCase()}. Shopr Coins have been refunded to your wallet.`,
                         type: "info",
+                    });
+
+                    // Record refund transaction
+                    await CoinTransaction.create({
+                        userId: user._id,
+                        amount: order.totalAmount,
+                        type: "refund",
+                        description: `Refund for ${status.toLowerCase()} order #${order._id.toString().slice(-8).toUpperCase()} by Admin.`,
+                        balanceAfter: user.coins
                     });
                 }
             } catch (refundError) {

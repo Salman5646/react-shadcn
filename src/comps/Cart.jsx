@@ -175,7 +175,7 @@ export default function Cart() {
                                                 <TableCell className="text-gray-500 dark:text-zinc-400">
                                                     {cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0)} Unit(s)
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono">${total.toFixed(2)}</TableCell>
+                                                <TableCell className="text-right font-mono">₹{total.toFixed(2)}</TableCell>
                                             </TableRow>
                                             <TableRow className="border-gray-200 dark:border-zinc-800">
                                                 <TableCell className="font-medium">Shipping</TableCell>

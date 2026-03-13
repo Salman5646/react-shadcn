@@ -323,8 +323,8 @@ const ProductPage = () => {
 
                         <div className="space-y-4">
                             <div className="flex items-end gap-3">
-                                <span className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white">${product.price}</span>
-                                <span className="text-slate-400 text-sm mb-2 line-through font-medium">${(product.price * 1.2).toFixed(2)}</span>
+                                <span className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white">₹{product.price}</span>
+                                <span className="text-slate-400 text-sm mb-2 line-through font-medium">₹{(product.price * 1.2).toFixed(2)}</span>
                             </div>
                             <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-lg">
                                 {product.product_description}

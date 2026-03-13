@@ -88,7 +88,7 @@ export default function Orders() {
             toast.error("Please select a return topic");
             return;
         }
-        
+
         const combinedReason = `${returnTopic}${returnDesc ? ' - ' + returnDesc : ''}`;
 
         try {
@@ -166,43 +166,46 @@ export default function Orders() {
                 ) : (
                     <div className="space-y-6">
                         {orders.map((order) => (
-                            <div key={order._id} className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800/50 shadow-sm overflow-hidden group hover:border-indigo-500/30 transition-colors">
+                            <div key={order._id} className="bg-white dark:bg-zinc-900 rounded-2xl md:rounded-3xl border border-zinc-200 dark:border-zinc-800/50 shadow-sm overflow-hidden group hover:border-indigo-500/30 transition-all">
                                 {/* Order Header */}
-                                <div className="p-6 sm:px-8 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-950/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Order ID</span>
-                                            <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">#{order._id.slice(-8).toUpperCase()}</span>
+                                <div className="p-4 sm:p-6 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-950/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex flex-wrap items-center justify-between sm:justify-start gap-x-4 gap-y-2">
+                                        <div className="space-y-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Order</span>
+                                                <span className="font-mono text-sm font-bold text-zinc-900 dark:text-zinc-100">#{order._id.slice(-8).toUpperCase()}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                                <Calendar className="h-3.5 w-3.5" />
+                                                {formatDate(order.createdAt)}
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                                            <Calendar className="h-4 w-4" />
-                                            {formatDate(order.createdAt)}
+
+                                        <div className="sm:hidden">
+                                            <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${getStatusColor(order.status)}`}>
+                                                {order.status}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-right hidden sm:block">
-                                            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 block mb-0.5">Total Amount</span>
-                                            <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-1 justify-end">
-                                                <Coins className="h-5 w-5 text-yellow-500" /> {order.totalAmount}
+                                    <div className="flex items-center justify-between sm:justify-end gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800/50">
+                                        <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0.5">
+                                            <span className="text-[10px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Total</span>
+                                            <span className="font-bold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+                                                <Coins className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" /> {order.totalAmount}
                                             </span>
                                         </div>
-                                        <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusColor(order.status)}`}>
+                                        <div className={`hidden sm:block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusColor(order.status)}`}>
                                             {order.status}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="sm:hidden p-4 border-b border-zinc-100 dark:border-zinc-800/50 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900">
-                                    <span className="text-sm font-medium text-zinc-500">Total</span>
-                                    <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1"><Coins className="h-4 w-4 text-yellow-500" /> {order.totalAmount}</span>
-                                </div>
-
                                 {/* Order Items */}
-                                <div className="p-6 sm:px-8 divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                                <div className="p-4 sm:p-6 divide-y divide-zinc-100 dark:divide-zinc-800/50">
                                     {order.items.map((item, index) => (
                                         <div key={index} className="py-4 flex items-center gap-4 first:pt-0 last:pb-0">
-                                            <div className="h-16 w-16 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
+                                            <div className="h-16 w-16 sm:h-20 sm:w-20 bg-zinc-100 dark:bg-zinc-800 rounded-lg sm:rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
                                                 <img
                                                     src={item.product_image}
                                                     alt={item.product_name}
@@ -213,16 +216,16 @@ export default function Orders() {
                                                 />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <Link to={`/product/${item.productId}`} className="font-bold text-base text-zinc-900 dark:text-zinc-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate block transition-colors">
+                                                <Link to={`/product/${item.productId}`} className="font-bold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate block transition-colors">
                                                     {item.product_name}
                                                 </Link>
-                                                <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-3">
-                                                    <span>Qty: {item.quantity}</span>
-                                                    <span className="h-1 w-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
-                                                    <span className="flex items-center gap-1"><Coins className="h-3 w-3 text-yellow-500" /> {item.price} each</span>
+                                                <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-2 sm:gap-3">
+                                                    <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] sm:text-xs font-medium">Qty: {item.quantity}</span>
+                                                    <span className="h-1 w-1 rounded-full bg-zinc-300 dark:bg-zinc-700 hidden sm:block"></span>
+                                                    <span className="flex items-center gap-1 font-medium"><Coins className="h-3 w-3 text-yellow-500" /> {item.price}</span>
                                                 </div>
                                             </div>
-                                            <div className="hidden sm:flex text-right shrink-0">
+                                            <div className="shrink-0">
                                                 <ChevronRight className="h-5 w-5 text-zinc-300 dark:text-zinc-600 group-hover:text-indigo-500 transition-colors" />
                                             </div>
                                         </div>
@@ -230,10 +233,10 @@ export default function Orders() {
                                 </div>
 
                                 {/* Order Actions Footer */}
-                                <div className="p-4 sm:px-8 border-t border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-950/30 flex flex-wrap justify-end gap-3">
-                                    <Link 
+                                <div className="p-4 sm:px-6 border-t border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/30 dark:bg-zinc-950/30 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                                    <Link
                                         to={`/order-tracking/${order._id}`}
-                                        className="px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 rounded-xl sm:rounded-lg transition-colors flex items-center justify-center gap-2"
                                     >
                                         <Package className="w-4 h-4" /> Track Order
                                     </Link>
@@ -241,7 +244,7 @@ export default function Orders() {
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <button
-                                                    className="px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                                    className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 rounded-xl sm:rounded-lg transition-colors flex items-center justify-center gap-2"
                                                 >
                                                     <XCircle className="w-4 h-4" /> Cancel Order
                                                 </button>
@@ -277,7 +280,7 @@ export default function Orders() {
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
                                                             <button
-                                                                className="px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 rounded-lg transition-colors flex items-center gap-1.5"
+                                                                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 rounded-xl sm:rounded-lg transition-colors flex items-center justify-center gap-2"
                                                             >
                                                                 <RefreshCcw className="w-4 h-4" /> Return Item
                                                             </button>

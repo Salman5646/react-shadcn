@@ -20,12 +20,11 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-import { Trash2, Heart, MapPin } from "lucide-react"
+import { Trash2, Heart, MapPin, Star } from "lucide-react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { verifySession } from "@/lib/cookieUtils"
 import * as cartService from "@/lib/cartService"
-
 
 // Change this line to explicitly pull out your custom props
 export function Cards({ behaviour, item, onRemove, variant = "default", onIncrease, onDecrease, isAdmin, onDelete, onToggleWishlist, isWishlisted }) {
@@ -57,7 +56,7 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
             "h-full flex flex-col cursor-pointer",
         )}>
             {/* Image Container with Overflow Hidden for Zoom Effect */}
-            <div className="relative aspect-square overflow-hidden bg-muted">
+            <div className="relative aspect-square overflow-hidden bg-muted group">
                 {/* Overlay */}
                 <div className="absolute inset-0 z-10 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
@@ -99,6 +98,23 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                     <CardTitle className="text-sm md:text-base font-semibold line-clamp-1 leading-tight group-hover:text-primary transition-colors">
                         {item.product_name}
                     </CardTitle>
+
+                    {/* Rating display */}
+                    <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-0.5">
+                            <Star className={cn(
+                                "h-3 w-3 md:h-3.5 md:w-3.5 fill-yellow-400 text-yellow-400",
+                                !item.rating?.rate && "fill-muted text-muted"
+                            )} />
+                            <span className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-zinc-300">
+                                {item.rating?.rate || "0.0"}
+                            </span>
+                        </div>
+                        <span className="text-[10px] md:text-xs text-muted-foreground font-medium">
+                            ({item.rating?.count || 0})
+                        </span>
+                    </div>
+
                     <div className="overflow-hidden max-h-[2.5rem] md:max-h-[3rem]">
                         <CardDescription className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                             {item.product_description}
@@ -112,7 +128,7 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                     )}
                 </div>
                 <CardContent className="p-0 pt-1 md:pt-2 mt-auto">
-                    <p className="text-base md:text-lg font-bold text-primary">${item.price}</p>
+                    <p className="text-base md:text-lg font-bold text-primary">₹{item.price}</p>
                 </CardContent>
             </CardHeader>
         </div>
@@ -120,14 +136,10 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
 
     return (
         <Card className="relative mx-auto w-full max-w-sm pt-0 my-2 flex flex-col overflow-hidden group transition-all duration-300 hover:shadow-xl border-gray-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
-
-
-
             {/* Now we always wrap with Link so it's clickable everywhere */}
             <Link to={`/product/${item._id}`}>
                 {Content}
             </Link>
-
 
             <CardFooter className="p-2 pt-0 md:p-4 md:pt-0 mt-auto">
                 {showQuantity ? (

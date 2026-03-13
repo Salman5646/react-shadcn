@@ -146,10 +146,10 @@ export default function AdminOrders() {
                     <div className="flex-1">
                         <div className="flex items-center gap-4">
                             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Manage Orders</h1>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={fetchOrders} 
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchOrders}
                                 disabled={loading}
                                 className="rounded-full gap-2 transition-all hover:bg-zinc-100 dark:hover:bg-zinc-800"
                             >
@@ -216,7 +216,7 @@ export default function AdminOrders() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                                                ${order.totalAmount}
+                                                ₹{order.totalAmount}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border ${getStatusColor(order.status)}`}>
@@ -257,7 +257,7 @@ export default function AdminOrders() {
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter className="mt-6">
                                                                 <AlertDialogCancel className="rounded-xl border-zinc-200 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900">Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction 
+                                                                <AlertDialogAction
                                                                     onClick={() => handleDelete(order._id)}
                                                                     className="bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg shadow-red-600/20 border-none"
                                                                 >

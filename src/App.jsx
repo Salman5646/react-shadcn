@@ -26,6 +26,7 @@ import Orders from "./pages/Orders";
 import CheckoutConfirmation from "./pages/CheckoutConfirmation";
 import AdminOrders from "./pages/AdminOrders";
 import OrderTracking from "./pages/OrderTracking";
+import CoinHistory from "./pages/CoinHistory";
 
 export function App() {
 
@@ -52,6 +53,7 @@ export function App() {
         <Route path="/order-tracking/:id" element={<OrderTracking />} />
         <Route path="/checkout" element={<CheckoutConfirmation />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/coin-history" element={<CoinHistory />} />
       </Routes>
       <Toaster
         richColors

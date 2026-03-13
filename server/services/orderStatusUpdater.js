@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Notification from "../models/Notification.js";
 import User from "../models/User.js";
+import CoinTransaction from "../models/CoinTransaction.js";
 
 // 1 Day = 24 hours
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -36,7 +37,7 @@ export const startOrderStatusUpdater = () => {
 
             if (!activeOrders.length) return;
 
-            
+
             const now = Date.now();
 
             for (const order of activeOrders) {
@@ -47,7 +48,7 @@ export const startOrderStatusUpdater = () => {
                     if (order.returnedAt && (now - new Date(order.returnedAt).getTime() > ONE_DAY)) {
                         order.status = "Refunded";
                         await order.save();
-                        
+
                         // Refund coins to user
                         if (order.userId && order.totalAmount) {
                             try {
@@ -55,8 +56,17 @@ export const startOrderStatusUpdater = () => {
                                 if (user) {
                                     user.coins = Math.round(((user.coins ?? 0) + order.totalAmount) * 100) / 100;
                                     await user.save();
+
+                                    // Record refund transaction
+                                    await CoinTransaction.create({
+                                        userId: user._id,
+                                        amount: order.totalAmount,
+                                        type: "refund",
+                                        description: `Automatic refund for returned order #${order._id.toString().slice(-8).toUpperCase()}`,
+                                        balanceAfter: user.coins
+                                    });
                                 }
-                                
+
                                 // Send notification
                                 await Notification.create({
                                     userId: order.userId,

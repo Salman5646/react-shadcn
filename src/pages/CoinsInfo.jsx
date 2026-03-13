@@ -114,7 +114,7 @@ export function CoinsInfo() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-slate-600 dark:text-zinc-300">
-                                        During checkout, you can use your coin balance to pay for your cart entirely. 1 coin equals $1 towards your purchase amount.
+                                        During checkout, you can use your coin balance to pay for your cart entirely. 1 coin equals ₹1 towards your purchase amount.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -137,7 +137,7 @@ export function CoinsInfo() {
                                 <div>
                                     <h3 className="font-bold text-lg mb-2">Can I split payments between coins and card?</h3>
                                     <p className="text-slate-500 dark:text-zinc-400">
-                                        Currently, coin payments must cover the full amount of your cart. If your cart total is $120, you must have at least 120 coins to checkout using coins.
+                                        Currently, coin payments must cover the full amount of your cart. If your cart total is ₹120, you must have at least 120 coins to checkout using coins.
                                     </p>
                                 </div>
                                 <Separator className="dark:bg-zinc-800" />

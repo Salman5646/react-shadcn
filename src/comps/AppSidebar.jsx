@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { CircleUser, LogOut, Coins, Home, Package, Heart, Info, Phone, Settings, MapPin, Users, PanelLeftClose, X } from "lucide-react";
+import { CircleUser, LogOut, Coins, Home, Package, Heart, History, Info, Phone, Settings, MapPin, Users, PanelLeftClose, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { verifySession, serverLogout } from "@/lib/cookieUtils";
 import { useSidebar, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator } from "@/components/ui/sidebar";
@@ -169,6 +169,14 @@ export function AppSidebar() {
                                             <Link to="/orders" className="flex items-center gap-3 w-full">
                                                 <Package className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                                                 <span className="font-medium text-zinc-700 dark:text-zinc-200">My Orders</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild isActive={location.pathname === "/coin-history"} tooltip="View transaction history" className="rounded-lg h-10 hover:bg-zinc-100 dark:hover:bg-zinc-900/50 data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 dark:data-[active=true]:bg-indigo-500/10 dark:data-[active=true]:text-indigo-400 transition-colors cursor-pointer">
+                                            <Link to="/coin-history" className="flex items-center gap-3 w-full">
+                                                <History className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                                                <span className="font-medium text-zinc-700 dark:text-zinc-200">Coin History</span>
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>

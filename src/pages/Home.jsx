@@ -5,9 +5,11 @@ import { Footer } from "../comps/Footer"
 import { Cards } from "../comps/Cards"
 import { ListFilter, X, ArrowUpDown } from "lucide-react";
 import { ProductSkeleton } from "@/comps/ProductSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "react-router-dom"
 import { ShoppingCart, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar, AccountButton } from "../comps/AppSidebar"
 import { cn } from "@/lib/utils"
@@ -34,6 +36,171 @@ import {
 import { verifySession } from "@/lib/cookieUtils"
 import * as cartService from "@/lib/cartService"
 import * as wishlistService from "@/lib/wishlistService"
+import { ArrowLeft, ArrowRight, Star } from "lucide-react";
+
+const HeroSlideshow = ({ products }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    // Minimum swipe distance (in pixels)
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe) {
+            setCurrentIndex((prev) => (prev + 1) % products.length);
+        } else if (isRightSwipe) {
+            setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
+        }
+    };
+
+    useEffect(() => {
+        if (!products.length || isHovered) return;
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % products.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [products, isHovered]);
+
+    if (!products.length) return null;
+
+    const currentProduct = products[currentIndex];
+
+    return (
+        <div
+            className="group relative w-full h-[300px] md:h-[450px] lg:h-[500px] rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-200/20 shadow-2xl transition-all duration-500 hover:shadow-black/20"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
+            {/* Background Images with Fade */}
+            {products.map((product, idx) => (
+                <div
+                    key={product._id}
+                    className={cn(
+                        "absolute inset-0 transition-opacity duration-1000 ease-in-out",
+                        currentIndex === idx ? "opacity-100 scale-100" : "opacity-0 scale-105"
+                    )}
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10" />
+                    <img
+                        src={product.product_image}
+                        alt={product.product_name}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            ))}
+
+            {/* Content Overlay */}
+            <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 md:px-16 lg:px-24">
+                <div className="max-w-xl space-y-4 md:space-y-6 animate-in fade-in slide-in-from-left-8 duration-700">
+                    <div className="flex items-center gap-2">
+                        <Badge className="bg-white/20 backdrop-blur-md text-white border-white/20 px-3 py-1 uppercase tracking-widest text-[10px] md:text-xs">
+                            Featured Product
+                        </Badge>
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/20 backdrop-blur-md border border-yellow-500/30">
+                            <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                            <span className="text-yellow-500 text-xs font-bold">{currentProduct.rating?.rate || 0}</span>
+                        </div>
+                    </div>
+
+                    <h1 className="text-2xl md:text-5xl lg:text-7xl font-bold text-white tracking-tight leading-none drop-shadow-lg">
+                        {currentProduct.product_name}
+                    </h1>
+
+                    <p className="text-xs md:text-lg text-zinc-300 line-clamp-2 md:line-clamp-3 leading-relaxed max-w-md drop-shadow-md">
+                        {currentProduct.product_description}
+                    </p>
+
+                    <div className="flex items-center gap-4 md:gap-8">
+                        <div>
+                            <p className="text-zinc-400 text-[10px] md:text-sm font-medium uppercase tracking-wider mb-0.5 md:mb-1">Starting from</p>
+                            <p className="text-white text-xl md:text-4xl font-bold tracking-tighter italic">₹{currentProduct.price}</p>
+                        </div>
+                        <Link
+                            to={`/product/${currentProduct._id}`}
+                            className="bg-white text-black hover:bg-zinc-200 px-6 md:px-10 py-2.5 md:py-4 rounded-full font-bold text-xs md:text-base transition-all active:scale-95 shadow-xl hover:shadow-white/10"
+                        >
+                            Explore Now
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="absolute bottom-6 left-8 md:left-16 z-30 flex items-center gap-4">
+                <div className="flex gap-2">
+                    {products.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrentIndex(idx)}
+                            className={cn(
+                                "h-1 transition-all duration-300 rounded-full",
+                                currentIndex === idx ? "w-6 md:w-8 bg-white" : "w-2 md:w-3 bg-white/30 hover:bg-white/50"
+                            )}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            <div className="absolute bottom-8 right-8 md:right-16 z-30 hidden md:flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button
+                    onClick={() => setCurrentIndex((prev) => (prev - 1 + products.length) % products.length)}
+                    className="p-3 md:p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all active:scale-90"
+                >
+                    <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+                <button
+                    onClick={() => setCurrentIndex((prev) => (prev + 1) % products.length)}
+                    className="p-3 md:p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all active:scale-90"
+                >
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+const HeroSkeleton = () => (
+    <div className="w-full h-[300px] md:h-[450px] lg:h-[500px] rounded-3xl overflow-hidden bg-zinc-900/5 dark:bg-zinc-800/20 border border-zinc-200/20 shadow-2xl relative">
+        <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
+        <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 md:px-16 lg:px-24 space-y-4 md:space-y-6">
+            <div className="flex gap-2">
+                <Skeleton className="h-5 md:h-6 w-24 md:w-32 rounded-full" />
+                <Skeleton className="h-5 md:h-6 w-12 md:w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-10 md:h-16 lg:h-20 w-3/4 md:w-2/3 rounded-xl" />
+            <div className="space-y-2">
+                <Skeleton className="h-3 md:h-4 w-full md:w-1/2 rounded-md" />
+                <Skeleton className="h-3 md:h-4 w-5/6 md:w-1/3 rounded-md" />
+            </div>
+            <div className="flex items-center gap-6 md:gap-8">
+                <Skeleton className="h-8 md:h-12 w-20 md:w-32 rounded-md" />
+                <Skeleton className="h-10 md:h-14 w-32 md:w-48 rounded-full" />
+            </div>
+        </div>
+        <div className="absolute bottom-6 left-8 md:left-16 z-30 flex gap-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-1 w-6 md:w-8 rounded-full" />
+            ))}
+        </div>
+    </div>
+);
 
 export function Home() {
     const [orders, setOrders] = useState([]);
@@ -268,6 +435,20 @@ export function Home() {
                 />
 
                 <main className="flex-1 p-4 md:p-6 lg:p-8 relative">
+                    {/* Hero Slideshow Section */}
+                    {isLoading ? (
+                        <div className="mb-8 md:mb-12">
+                            <HeroSkeleton />
+                        </div>
+                    ) : orders.length > 0 && (
+                        <div className="mb-8 md:mb-12">
+                            <HeroSlideshow products={[...orders]
+                                .sort((a, b) => (b.rating?.rate || 0) - (a.rating?.rate || 0))
+                                .slice(0, 5)}
+                            />
+                        </div>
+                    )}
+
                     {/* Header Row */}
                     <div className="flex items-center justify-between gap-2 mb-6">
                         <TooltipProvider>
@@ -292,7 +473,7 @@ export function Home() {
                                                 {tab.key === "All" && "Browse our entire curated collection"}
                                                 {tab.key === "New" && "Discover fresh drops from the last 7 days"}
                                                 {tab.key === "Hot" && "Trending items with elite 4+ star ratings"}
-                                                {tab.key === "Sale" && "Exclusive deals on premium picks under $50"}
+                                                {tab.key === "Sale" && "Exclusive deals on premium picks under ₹50"}
                                             </p>
                                         </TooltipContent>
                                     </Tooltip>

@@ -17,6 +17,11 @@ export function ProductSkeleton() {
                 <div className="space-y-1">
                     {/* Title */}
                     <Skeleton className="h-4 md:h-6 w-3/4 rounded-md" />
+                    {/* Rating Placeholder */}
+                    <div className="flex items-center gap-1.5 py-0.5">
+                        <Skeleton className="h-3 w-8 rounded-full" />
+                        <Skeleton className="h-3 w-6 rounded-full" />
+                    </div>
                     {/* Description - 2 lines */}
                     <Skeleton className="h-3 md:h-4 w-full rounded-md" />
                     <Skeleton className="h-3 md:h-4 w-5/6 rounded-md" />
