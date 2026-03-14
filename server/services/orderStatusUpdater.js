@@ -47,6 +47,7 @@ export const startOrderStatusUpdater = () => {
                     // Process automated refund strictly after 24 real hours
                     if (order.returnedAt && (now - new Date(order.returnedAt).getTime() > ONE_DAY)) {
                         order.status = "Refunded";
+                        order.refundedAt = new Date();
                         await order.save();
 
                         // Refund coins to user
@@ -107,10 +108,13 @@ export const startOrderStatusUpdater = () => {
 
                 if (order.status === "Processing" && timeElapsedMs > (1 * ONE_DAY)) {
                     updatedStatus = "Shipped";
+                    order.shippedAt = new Date();
                 } else if (order.status === "Shipped" && timeElapsedMs > (totalShippingTimeMs / 2)) {
                     updatedStatus = "Out for Delivery";
+                    order.outForDeliveryAt = new Date();
                 } else if (order.status === "Out for Delivery" && timeElapsedMs > totalShippingTimeMs) {
                     updatedStatus = "Delivered";
+                    order.deliveredAt = new Date();
                 }
 
                 if (updatedStatus) {
@@ -122,19 +126,6 @@ export const startOrderStatusUpdater = () => {
                     }
                     await order.save();
 
-                    // Send notification ONLY for Delivered status
-                    if (updatedStatus === "Delivered" && order.userId) {
-                        try {
-                            await Notification.create({
-                                userId: order.userId,
-                                title: `Order Delivered 📦!`,
-                                message: `Your order #${order._id.toString().slice(-8).toUpperCase()} has arrived.`,
-                                type: "success",
-                            });
-                        } catch (err) {
-                            console.error("[OrderUpdater] Failed to send notification", err);
-                        }
-                    }
                 }
             }
 

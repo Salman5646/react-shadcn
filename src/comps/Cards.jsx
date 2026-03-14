@@ -99,36 +99,38 @@ export function Cards({ behaviour, item, onRemove, variant = "default", onIncrea
                         {item.product_name}
                     </CardTitle>
 
-                    {/* Rating display */}
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex items-center gap-0.5">
-                            <Star className={cn(
-                                "h-3 w-3 md:h-3.5 md:w-3.5 fill-yellow-400 text-yellow-400",
-                                !item.rating?.rate && "fill-muted text-muted"
-                            )} />
-                            <span className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-zinc-300">
-                                {item.rating?.rate || "0.0"}
-                            </span>
-                        </div>
-                        <span className="text-[10px] md:text-xs text-muted-foreground font-medium">
-                            ({item.rating?.count || 0})
-                        </span>
-                    </div>
-
                     <div className="overflow-hidden max-h-[2.5rem] md:max-h-[3rem]">
                         <CardDescription className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                             {item.product_description}
                         </CardDescription>
                     </div>
+
                     {item.origin_location && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-1.5 font-medium">
-                            <MapPin className="h-3 w-3 text-indigo-500" />
-                            <span>Ships from {item.origin_location}</span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-1.5 font-medium w-full overflow-hidden">
+                            <MapPin className="h-3 w-3 text-indigo-500 shrink-0" />
+                            <span className="truncate">Ships from {item.origin_location}</span>
                         </div>
                     )}
                 </div>
+
                 <CardContent className="p-0 pt-1 md:pt-2 mt-auto">
-                    <p className="text-base md:text-lg font-bold text-primary">₹{item.price}</p>
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-base md:text-lg font-bold text-primary">₹{item.price}</p>
+
+                        {/* Rating display at the end */}
+                        <div className="flex items-center gap-1">
+                            <Star className={cn(
+                                "h-3 w-3 md:h-3.5 md:w-3.5 fill-yellow-400 text-yellow-400",
+                                (!item.reviews || item.reviews.length === 0) && "fill-muted text-muted"
+                            )} />
+                            <span className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-zinc-300">
+                                {(!item.reviews || item.reviews.length === 0) ? "0.0" : (item.rating?.rate || "0.0")}
+                            </span>
+                            <span className="text-[10px] font-medium text-muted-foreground hidden sm:inline ml-0.5">
+                                ({item.reviews?.length || 0} reviews)
+                            </span>
+                        </div>
+                    </div>
                 </CardContent>
             </CardHeader>
         </div>

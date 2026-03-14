@@ -17,19 +17,18 @@ export function ProductSkeleton() {
                 <div className="space-y-1">
                     {/* Title */}
                     <Skeleton className="h-4 md:h-6 w-3/4 rounded-md" />
-                    {/* Rating Placeholder */}
-                    <div className="flex items-center gap-1.5 py-0.5">
-                        <Skeleton className="h-3 w-8 rounded-full" />
-                        <Skeleton className="h-3 w-6 rounded-full" />
-                    </div>
                     {/* Description - 2 lines */}
                     <Skeleton className="h-3 md:h-4 w-full rounded-md" />
                     <Skeleton className="h-3 md:h-4 w-5/6 rounded-md" />
                 </div>
 
                 <CardContent className="p-0 pt-1 md:pt-2 mt-auto">
-                    {/* Price */}
-                    <Skeleton className="h-5 md:h-7 w-16 rounded-md" />
+                    <div className="flex items-center justify-between gap-4">
+                        {/* Price */}
+                        <Skeleton className="h-5 md:h-7 w-16 rounded-md" />
+                        {/* Rating Placeholder */}
+                        <Skeleton className="h-4 w-12 rounded-full" />
+                    </div>
                 </CardContent>
             </CardHeader>
 

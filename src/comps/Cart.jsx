@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Cards } from "./Cards"
-import { Trash, Coins } from "lucide-react"
+import { Trash, Coins, ShoppingCart } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { BackButton } from "./BackButton";
 import { useState, useEffect } from "react";
@@ -150,8 +150,20 @@ export default function Cart() {
 
                                 ))
                             ) : (
-                                <div className="col-span-full   p-16 text-center bg-gray-100 dark:bg-zinc-900/30">
-                                    <p className="text-gray-400 dark:text-zinc-500 text-lg">Your cart is currently empty.</p>
+                                <div className="col-span-full flex flex-col items-center justify-center py-24 text-center rounded-3xl bg-slate-50 dark:bg-zinc-900/30 border border-dashed border-slate-200 dark:border-zinc-800">
+                                    <div className="bg-white dark:bg-zinc-800 p-6 rounded-full shadow-xl mb-6 ring-1 ring-slate-100 dark:ring-zinc-700">
+                                        <ShoppingCart className="h-12 w-12 text-slate-300 dark:text-zinc-600 animate-pulse" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Your cart is empty</h3>
+                                    <p className="text-slate-500 dark:text-zinc-400 max-w-xs mb-8">
+                                        Looks like you haven't added anything to your cart yet. Let's find something amazing for you!
+                                    </p>
+                                    <Link
+                                        to="/"
+                                        className="bg-black dark:bg-white text-white dark:text-black px-8 py-3 rounded-full font-bold transition-all hover:scale-105 active:scale-95 shadow-lg"
+                                    >
+                                        Explore Products
+                                    </Link>
                                 </div>
                             )}
                         </div>

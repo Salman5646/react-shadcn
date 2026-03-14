@@ -118,14 +118,15 @@ app.post("/api/products/:id/reviews", verifyToken, async (req, res) => {
         const userIdString = req.verifiedUser.id.toString();
         const mongoUserId = new mongoose.Types.ObjectId(userIdString);
 
-        // Verify that the user has actually purchased this product
+        // Verify that the user has actually purchased and received this product
         const hasPurchased = await Order.findOne({
             userId: mongoUserId,
-            "items.productId": productId
+            "items.productId": productId,
+            status: { $in: ["Delivered", "Returned", "Refunded"] }
         });
 
         if (!hasPurchased) {
-            return res.status(403).json({ message: "You can only review products you have completely purchased." });
+            return res.status(403).json({ message: "You can only review products that have been successfully delivered to you." });
         }
 
 
@@ -749,7 +750,13 @@ app.get("/api/orders", verifyToken, async (req, res) => {
 app.get("/api/orders/:id", verifyToken, async (req, res) => {
     try {
         // Find order and populate products to get origin_location
-        const order = await Order.findOne({ _id: req.params.id, userId: req.verifiedUser.id })
+        // Admins can see any order, users only their own
+        const query = { _id: req.params.id };
+        if (req.verifiedUser.role !== "admin") {
+            query.userId = req.verifiedUser.id;
+        }
+
+        const order = await Order.findOne(query)
             .populate("items.productId");
 
         if (!order) return res.status(404).json({ message: "Order not found" });
@@ -766,47 +773,93 @@ app.get("/api/orders/:id", verifyToken, async (req, res) => {
 
         // Calculate tracking milestones based on real days
         const ONE_DAY = 24 * 60 * 60 * 1000;
-        const createdAt = new Date(order.createdAt).getTime();
-
-        // 1. Processing: when created
-        const processingDate = new Date(createdAt);
-
-        // 2. Shipped: 1/3 of the way through the total shipping time (min 8 hours)
         const ONE_HOUR = 60 * 60 * 1000;
         const totalDurationMs = shippingDays * ONE_DAY;
-        const shippedDate = new Date(createdAt + Math.max(8 * ONE_HOUR, totalDurationMs / 3));
+        const createdAt = new Date(order.createdAt).getTime();
 
-        // 3. Out for Delivery: 2/3 of the way through the total shipping time
-        const outForDeliveryDate = new Date(createdAt + Math.max(16 * ONE_HOUR, (totalDurationMs / 3) * 2));
+        // 4. Milestone Calculation (Sequential & Robust)
+        const processingDate = new Date(createdAt);
 
-        // 4. Delivered: exact estimated delivery date (or actual deliveredAt if it already happened)
-        const deliveredDate = order.deliveredAt ? new Date(order.deliveredAt) : new Date(order.estimatedDelivery);
+        // Anchor points: use real timestamps if available
+        let delivered = order.deliveredAt ? new Date(order.deliveredAt) : null;
+        let outForDelivery = order.outForDeliveryAt ? new Date(order.outForDeliveryAt) : null;
+        let shipped = order.shippedAt ? new Date(order.shippedAt) : null;
 
-        // Ensure shipped and outForDelivery aren't in the future if already delivered/completed
-        let finalShippedDate = shippedDate;
-        let finalOutForDeliveryDate = outForDeliveryDate;
-
-        if ((order.status === "Delivered" || order.status === "Returned" || order.status === "Refunded") && deliveredDate) {
-            const deliveredTime = deliveredDate.getTime();
-            // If it was delivered faster than estimates, cap the previous steps
-            if (finalOutForDeliveryDate.getTime() > deliveredTime) {
-                finalOutForDeliveryDate = new Date(deliveredTime - (15 * 60 * 1000)); // 15 mins before delivery
-            }
-            if (finalShippedDate.getTime() > finalOutForDeliveryDate.getTime()) {
-                finalShippedDate = new Date(finalOutForDeliveryDate.getTime() - (2 * 60 * 60 * 1000)); // 2 hours before out-for-delivery
-            }
+        // If status is "Delivered" and we don't have a deliveredAt, fall back to estimated delivery
+        if (!delivered && (order.status === "Delivered" || order.status === "Returned" || order.status === "Refunded")) {
+            delivered = new Date(order.deliveredAt || order.estimatedDelivery || (createdAt + totalDurationMs));
         }
 
-        // Sanitize populated items back to just needed view fields so we don't leak extra DB fields if unneeded
+        // Logic: Work backwards from the most recent "truth" or anchor
+        if (delivered) {
+            // If Delivered, work backwards to ensure previous steps are in the past
+            if (!outForDelivery) outForDelivery = new Date(delivered.getTime() - (45 * 60 * 1000)); // 45m before
+            if (!shipped) shipped = new Date(outForDelivery.getTime() - (3 * 60 * 60 * 1000)); // 3h before
+        } else if (outForDelivery) {
+            // If Out for Delivery, work backwards for Shipped, forwards for Delivery
+            if (!shipped) shipped = new Date(outForDelivery.getTime() - (3 * 60 * 60 * 1000));
+            delivered = new Date(outForDelivery.getTime() + (totalDurationMs / 4));
+        } else if (shipped) {
+            // If Shipped, work forwards
+            outForDelivery = new Date(shipped.getTime() + (totalDurationMs / 2));
+            delivered = new Date(createdAt + totalDurationMs);
+        } else {
+            // Use defaults if nothing has happened yet
+            shipped = new Date(createdAt + Math.max(8 * ONE_HOUR, totalDurationMs / 3));
+            outForDelivery = new Date(createdAt + Math.max(16 * ONE_HOUR, (totalDurationMs / 3) * 2));
+            delivered = new Date(order.estimatedDelivery || (createdAt + totalDurationMs));
+        }
+
+        // Final Sequence Enforcement (Always Forward, but flexible gaps)
+        const totalDuration = delivered.getTime() - processingDate.getTime();
+
+        // If the order is already delivered, we use shorter gaps to fit the actual timeline
+        // especially for rapid manual testing.
+        const isCompleted = ["Delivered", "Returned", "Refunded"].includes(order.status);
+
+        let minGap1 = 30 * 60 * 1000; // 30m
+        let minGap2 = 60 * 60 * 1000; // 1h
+        let minGap3 = 30 * 60 * 1000; // 30m
+
+        if (isCompleted || totalDuration < (minGap1 + minGap2 + minGap3)) {
+            // Shrink gaps proportionally to fit into the available time
+            // but keep at least 1 minute between steps if possible
+            const availableTime = Math.max(totalDuration, 3 * 60 * 1000);
+            minGap1 = availableTime / 4;
+            minGap2 = availableTime / 4;
+            minGap3 = availableTime / 4;
+        }
+
+        shipped = new Date(processingDate.getTime() + minGap1);
+        outForDelivery = new Date(shipped.getTime() + minGap2);
+
+        // Final delivered anchor check:
+        // For completed orders, we MUST NOT go past the actual delivery/current time.
+        if (isCompleted) {
+            // delivered is already our anchor (order.deliveredAt or fallback)
+            // Ensure sequence is maintained even in edge cases
+            if (outForDelivery.getTime() > delivered.getTime() - 1000) {
+                outForDelivery = new Date(delivered.getTime() - 2000);
+                shipped = new Date(outForDelivery.getTime() - 2000);
+            }
+        } else {
+            // For active orders, use the calculated delivered (which might be in the future)
+            delivered = new Date(outForDelivery.getTime() + minGap3);
+        }
+
+        // Sanitize populated items back to just needed view fields
         const orderObj = order.toObject();
 
         res.json({
             ...orderObj,
             trackingDates: {
                 processing: processingDate,
-                shipped: finalShippedDate,
-                outForDelivery: finalOutForDeliveryDate,
-                delivered: deliveredDate,
+                shipped: shipped,
+                outForDelivery: outForDelivery,
+                delivered: delivered,
+                returned: order.returnedAt,
+                cancelled: order.cancelledAt,
+                refunded: order.refundedAt,
                 totalShippingDays: shippingDays
             }
         });
@@ -827,6 +880,7 @@ app.put("/api/orders/:id/cancel", verifyToken, async (req, res) => {
         }
 
         order.status = "Cancelled";
+        order.cancelledAt = new Date();
         await order.save();
 
         // Refund coins to user immediately on cancellation
@@ -895,6 +949,16 @@ app.put("/api/orders/:id/return", verifyToken, async (req, res) => {
             order.returnReason = returnReason;
         }
         await order.save();
+
+        // Send return initiation notification
+        try {
+            await Notification.create({
+                userId: order.userId,
+                title: "Return Initiated 🔄",
+                message: `Your return for order #${order._id.toString().slice(-8).toUpperCase()} has been initiated. You will receive a refund in 24 hours.`,
+                type: "info",
+            });
+        } catch (_) { /* non-critical */ }
 
         res.json({ message: "Return initiated. You will be refunded in 24 hours.", order });
     } catch (err) {
@@ -1063,7 +1127,7 @@ app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
         }
 
         const { status } = req.body;
-        const validStatuses = ["Processing", "Shipped", "Delivered", "Cancelled", "Refunded", "Returned"];
+        const validStatuses = ["Processing", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Refunded", "Returned"];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: "Invalid status" });
         }
@@ -1073,8 +1137,21 @@ app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
 
         const previousStatus = order.status;
         const updateFields = { status };
-        if (status === "Delivered") {
+        if (status === "Shipped") {
+            updateFields.shippedAt = new Date();
+        } else if (status === "Out for Delivery") {
+            updateFields.outForDeliveryAt = new Date();
+            if (!order.shippedAt) updateFields.shippedAt = new Date(Date.now() - (2 * 60 * 60 * 1000));
+        } else if (status === "Delivered") {
             updateFields.deliveredAt = new Date();
+            if (!order.outForDeliveryAt) updateFields.outForDeliveryAt = new Date(Date.now() - (1 * 60 * 60 * 1000));
+            if (!order.shippedAt) updateFields.shippedAt = new Date(Date.now() - (3 * 60 * 60 * 1000));
+        } else if (status === "Cancelled") {
+            updateFields.cancelledAt = new Date();
+        } else if (status === "Refunded") {
+            updateFields.refundedAt = new Date();
+        } else if (status === "Returned") {
+            updateFields.returnedAt = new Date();
         }
 
         // Refund coins if status changed to Cancelled or Refunded
@@ -1111,19 +1188,26 @@ app.put("/api/admin/orders/:id/status", verifyToken, async (req, res) => {
         }
 
         order.status = status;
+        if (updateFields.shippedAt) order.shippedAt = updateFields.shippedAt;
+        if (updateFields.outForDeliveryAt) order.outForDeliveryAt = updateFields.outForDeliveryAt;
         if (updateFields.deliveredAt) order.deliveredAt = updateFields.deliveredAt;
+        if (updateFields.cancelledAt) order.cancelledAt = updateFields.cancelledAt;
+        if (updateFields.refundedAt) order.refundedAt = updateFields.refundedAt;
+        if (updateFields.returnedAt) order.returnedAt = updateFields.returnedAt;
         await order.save();
 
         const updatedOrder = await Order.findById(order._id).populate('userId', 'name email');
 
-        // Send order update notification
+        // Send specific notification only for "Returned" status in this route
+        // (Cancelled/Refunded are handled by "Coins Refunded" already, 
+        //  Shipped/Delivered don't need notifications per user rules)
         try {
-            if (updatedOrder.userId && updatedOrder.userId._id) {
+            if (updatedOrder.userId && updatedOrder.userId._id && status === "Returned") {
                 await Notification.create({
                     userId: updatedOrder.userId._id,
-                    title: "Order Update 📦",
-                    message: `Your order #${updatedOrder._id.toString().slice(-8).toUpperCase()} is now ${status}!`,
-                    type: status === "Cancelled" || status === "Returned" || status === "Refunded" ? "warning" : "success",
+                    title: "Order Returned 🔄",
+                    message: `Your order #${updatedOrder._id.toString().slice(-8).toUpperCase()} has been marked as Returned.`,
+                    type: "warning",
                 });
             }
         } catch (_) { /* non-critical */ }
@@ -1170,6 +1254,7 @@ async function getPopulatedCart(userId) {
             price: item.productId.price,
             category: item.productId.category,
             rating: item.productId.rating,
+            reviews: item.productId.reviews,
             quantity: item.quantity,
         }));
 }

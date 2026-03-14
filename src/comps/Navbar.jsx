@@ -7,7 +7,7 @@ import {
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import React, { useState, useEffect } from "react"
 import logo from "../images/logo.png"
-import { Menu, Home, Users, Info, Phone, LogIn, LogOut, Settings, ShoppingCart, Sun, Moon, Heart } from "lucide-react"
+import { Menu, Home, Users, Info, Phone, LogIn, LogOut, Settings, ShoppingCart, Sun, Moon, Heart, Package } from "lucide-react"
 import { NotificationBell } from "./NotificationBell"
 import {
     Sheet,
@@ -188,8 +188,8 @@ export function Navbar() {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
-                                            <Link to="/cart" className="flex items-center gap-2 cursor-pointer">
-                                                <ShoppingCart className="h-3.5 w-3.5" /> My Cart
+                                            <Link to="/orders" className="flex items-center gap-2 cursor-pointer">
+                                                <Package className="h-3.5 w-3.5" /> My Orders
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
@@ -275,7 +275,7 @@ export function Navbar() {
                                                 <div className="my-2 h-px bg-border" />
                                                 <MobileLink to="/account" icon={Settings}>Account Settings</MobileLink>
                                                 <MobileLink to="/wishlist" icon={Heart}>Wishlist</MobileLink>
-                                                <MobileLink to="/cart" icon={ShoppingCart}>My Cart</MobileLink>
+                                                <MobileLink to="/orders" icon={Package}>My Orders</MobileLink>
                                                 <NotificationBell />
                                             </>
                                         )}

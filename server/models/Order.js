@@ -20,8 +20,12 @@ const orderSchema = new mongoose.Schema(
             country: { type: String, default: "India" }
         },
         estimatedDelivery: { type: Date },
+        shippedAt: { type: Date },
+        outForDeliveryAt: { type: Date },
         deliveredAt: { type: Date },
         returnedAt: { type: Date },
+        cancelledAt: { type: Date },
+        refundedAt: { type: Date },
         returnReason: { type: String },
         status: {
             type: String,

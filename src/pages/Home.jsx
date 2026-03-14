@@ -115,7 +115,9 @@ const HeroSlideshow = ({ products }) => {
                         </Badge>
                         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/20 backdrop-blur-md border border-yellow-500/30">
                             <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                            <span className="text-yellow-500 text-xs font-bold">{currentProduct.rating?.rate || 0}</span>
+                            <span className="text-yellow-500 text-xs font-bold">
+                                {(!currentProduct.reviews || currentProduct.reviews.length === 0) ? "0.0" : (currentProduct.rating?.rate || 0)}
+                            </span>
                         </div>
                     </div>
 
@@ -233,8 +235,12 @@ export function Home() {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const getProductLabels = (product) => {
         const labels = [];
+        const reviews = product.reviews || [];
+        const actualRating = reviews.length > 0 ? (product.rating?.rate || 0) : 0;
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
         if (product.createdAt && new Date(product.createdAt) > sevenDaysAgo) labels.push("New");
-        if (product.rating?.rate >= 4) labels.push("Hot");
+        if (actualRating >= 4 && reviews.length > 0) labels.push("Hot");
         if (product.price < 50) labels.push("Sale");
         return labels;
     };
@@ -443,7 +449,11 @@ export function Home() {
                     ) : orders.length > 0 && (
                         <div className="mb-8 md:mb-12">
                             <HeroSlideshow products={[...orders]
-                                .sort((a, b) => (b.rating?.rate || 0) - (a.rating?.rate || 0))
+                                .sort((a, b) => {
+                                    const aRate = (a.reviews?.length > 0) ? (a.rating?.rate || 0) : 0;
+                                    const bRate = (b.reviews?.length > 0) ? (b.rating?.rate || 0) : 0;
+                                    return bRate - aRate;
+                                })
                                 .slice(0, 5)}
                             />
                         </div>

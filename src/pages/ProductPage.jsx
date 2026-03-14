@@ -119,6 +119,7 @@ const ProductPage = () => {
                 if (res.ok) {
                     const orders = await res.json();
                     const purchased = orders.some(order =>
+                        ["Delivered", "Refunded", "Returned"].includes(order.status) &&
                         order.items.some(item => (item.productId?._id || item.productId) === id)
                     );
                     setHasPurchased(purchased);
@@ -181,9 +182,12 @@ const ProductPage = () => {
     const getProductLabels = (product) => {
         if (!product) return [];
         const labels = [];
+        const reviews = product.reviews || [];
+        const actualRating = reviews.length > 0 ? (product.rating?.rate || 0) : 0;
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
         if (product.createdAt && new Date(product.createdAt) > sevenDaysAgo) labels.push("New");
-        if (product.rating?.rate >= 4) labels.push("Hot");
+        if (actualRating >= 4 && reviews.length > 0) labels.push("Hot");
         if (product.price < 50) labels.push("Sale");
         return labels;
     };
@@ -248,9 +252,9 @@ const ProductPage = () => {
 
     if (!product) return null;
 
-    const rating = product.rating?.rate || 0;
-    const stockCount = product.rating?.count || 0;
     const reviews = product.reviews || [];
+    const rating = reviews.length === 0 ? 0 : (product.rating?.rate || 0);
+    const reviewCount = reviews.length;
 
     const userReview = user && reviews.find(r => r.userId?.toString() === user.id?.toString());
 
@@ -291,7 +295,7 @@ const ProductPage = () => {
                                 <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full ring-1 ring-blue-200 dark:ring-blue-800/50">
                                     {product.category}
                                 </span>
-                                {stockCount > 100 && (
+                                {reviewCount > 100 && (
                                     <span className="px-3 py-1 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[10px] font-black uppercase tracking-widest rounded-full ring-1 ring-orange-200 dark:ring-orange-800/50 flex items-center gap-1.5">
                                         <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span> Best Seller
                                     </span>
@@ -316,7 +320,7 @@ const ProductPage = () => {
                                     <span className="text-sm font-bold text-slate-900 dark:text-slate-200 ml-1">{rating}</span>
                                 </div>
                                 <div className="text-sm font-medium text-slate-400 border-l border-slate-200 dark:border-slate-800 pl-6">
-                                    <span className="text-slate-900 dark:text-slate-200">{stockCount}</span> Customer Ratings
+                                    <span className="text-slate-900 dark:text-slate-200">{reviewCount}</span> Customer Reviews
                                 </div>
                             </div>
                         </div>
